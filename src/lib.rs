@@ -205,9 +205,12 @@ impl Workspace {
 
             let status = match (*(*self.inner).info).status_val {
                 1 => Status::Solved,
+                2 => Status::SolvedInaccurate,
                 -2 => Status::MaxIterationsReached,
                 -3 => Status::PrimalInfeasible,
+                3 => Status::PrimalInfeasibleInaccurate,
                 -4 => Status::DualInfeasible,
+                4 => Status::DualInfeasibleInaccurate,
                 _ => unreachable!(),
             };
 
@@ -237,9 +240,12 @@ pub struct Solution<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Status {
     Solved,
+    SolvedInaccurate,
     MaxIterationsReached,
     PrimalInfeasible,
+    PrimalInfeasibleInaccurate,
     DualInfeasible,
+    DualInfeasibleInaccurate,
 }
 
 pub struct CscMatrix<'a> {
