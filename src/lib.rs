@@ -251,4 +251,7 @@ pub enum Status {
     PrimalInfeasibleInaccurate,
     DualInfeasible,
     DualInfeasibleInaccurate,
+    // Prevent exhaustive enum matching
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
