@@ -2,19 +2,17 @@
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 
-use std::mem;
+mod bindings;
+pub use bindings::*;
 
-mod ffi;
-pub use ffi::*;
+#[cfg(feature = "osqp_dlong")]
+pub type osqp_int = ::std::os::raw::c_longlong;
+#[cfg(not(feature = "osqp_dlong"))]
+pub type osqp_int = ::std::os::raw::c_int;
+pub type osqp_float = f64;
 
-mod ffi_internal;
+type c_int = osqp_int;
+type c_float = osqp_float;
 
-impl Default for OSQPSettings {
-    fn default() -> Self {
-        unsafe {
-            let mut settings = mem::zeroed();
-            ffi_internal::set_default_settings(&mut settings);
-            settings
-        }
-    }
-}
+pub enum OSQPTimer { }
+

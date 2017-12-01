@@ -1,6 +1,7 @@
 extern crate cmake;
 use cmake::Config;
 
+use std::env;
 use std::path::Path;
 use std::process::Command;
 
@@ -11,12 +12,21 @@ fn main() {
             .status();
     }
 
+    // Try to make c_int the same size as the target pointer width (i.e. 32 or 64 bits)
+    let dlong_enabled = match &*env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() {
+        "64" => {
+            println!(r#"cargo:rustc-cfg=feature="osqp_dlong""#);
+            "ON"
+        },
+        "32" => "OFF",
+        other => panic!("{} bit targets are currently unsupported. please file a bug.", other),
+    };
+
     // TODO: Figure out the story around cmake and cross-compilation
     let dst = Config::new("osqp")
         .define("CTRLC", "OFF")
         .define("DFLOAT", "OFF")
-        // TODO: c_int is either int or long long make the default the target pointer size
-        .define("DLONG", "ON")
+        .define("DLONG", dlong_enabled)
         .define("PRINTING", "ON")
         .define("PROFILING", "ON")
         .define("UNITTESTS", "OFF")

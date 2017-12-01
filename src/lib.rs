@@ -12,8 +12,8 @@ pub use ffi::OSQPSettings as Settings;
 #[allow(non_camel_case_types)]
 type float = f64;
 
-// Ensure osqp's c_int is the same size as usize/isize.
-assert_eq_size!(osqp_c_int; usize, ffi::c_int);
+// Ensure osqp_int is the same size as usize/isize.
+assert_eq_size!(osqp_int_size; usize, ffi::osqp_int);
 
 macro_rules! check {
     ($ret:expr) => {
@@ -66,8 +66,8 @@ impl Workspace {
             let mut A_ffi = csc_to_ffi(&A);
 
             let data = ffi::OSQPData {
-                n: n as ffi::c_int,
-                m: m as ffi::c_int,
+                n: n as ffi::osqp_int,
+                m: m as ffi::osqp_int,
                 P: &mut P_ffi,
                 A: &mut A_ffi,
                 q: q.as_ptr() as *mut float,
@@ -164,7 +164,7 @@ impl Workspace {
                 self.inner,
                 P_data.as_ptr() as *mut float,
                 null_mut(),
-                P_data.len() as ffi::c_int
+                P_data.len() as ffi::osqp_int
             ));
         }
     }
@@ -177,7 +177,7 @@ impl Workspace {
                 self.inner,
                 A_data.as_ptr() as *mut float,
                 null_mut(),
-                A_data.len() as ffi::c_int
+                A_data.len() as ffi::osqp_int
             ));
         }
     }
@@ -191,10 +191,10 @@ impl Workspace {
                 self.inner,
                 P_data.as_ptr() as *mut float,
                 null_mut(),
-                P_data.len() as ffi::c_int,
+                P_data.len() as ffi::osqp_int,
                 A_data.as_ptr() as *mut float,
                 null_mut(),
-                A_data.len() as ffi::c_int,
+                A_data.len() as ffi::osqp_int,
             ));
         }
     }
@@ -259,14 +259,14 @@ pub struct CscMatrix<'a> {
 unsafe fn csc_to_ffi(csc: &CscMatrix) -> ffi::csc {
     assert_valid_csc(csc);
 
-    // Casting is safe as at this point no indices exceed isize::MAX and c_int is a signed integer
+    // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed integer
     // of the same size as usize/isize
     ffi::csc {
-        nzmax: csc.data.len() as ffi::c_int,
-        m: csc.nrows as ffi::c_int,
-        n: csc.ncols as ffi::c_int,
-        p: csc.indptr.as_ptr() as *mut usize as *mut ffi::c_int,
-        i: csc.indices.as_ptr() as *mut usize as *mut ffi::c_int,
+        nzmax: csc.data.len() as ffi::osqp_int,
+        m: csc.nrows as ffi::osqp_int,
+        n: csc.ncols as ffi::osqp_int,
+        p: csc.indptr.as_ptr() as *mut usize as *mut ffi::osqp_int,
+        i: csc.indices.as_ptr() as *mut usize as *mut ffi::osqp_int,
         x: csc.data.as_ptr() as *mut float,
         nz: -1,
     }
