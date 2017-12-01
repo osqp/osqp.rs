@@ -1,0 +1,19 @@
+language: rust
+rust:
+  - 1.20.0
+  - stable
+  - beta
+  - nightly
+script:
+  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - cargo doc --verbose --all --no-deps
+  - cp example_qp.svg target/doc/osqp/
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  local_dir: target/doc/
+  on:
+    branch: master
+    rust: nightly
