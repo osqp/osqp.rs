@@ -208,14 +208,15 @@ impl Workspace {
         unsafe {
             check!(ffi::osqp_solve(self.inner));
 
-            let status = match (*(*self.inner).info).status_val {
-                1 => Status::Solved,
-                2 => Status::SolvedInaccurate,
-                -2 => Status::MaxIterationsReached,
-                -3 => Status::PrimalInfeasible,
-                3 => Status::PrimalInfeasibleInaccurate,
-                -4 => Status::DualInfeasible,
-                4 => Status::DualInfeasibleInaccurate,
+            use std::os::raw::c_int;
+            let status = match (*(*self.inner).info).status_val as c_int {
+                ffi::OSQP_SOLVED => Status::Solved,
+                ffi::OSQP_SOLVED_INACCURATE => Status::SolvedInaccurate,
+                ffi::OSQP_MAX_ITER_REACHED => Status::MaxIterationsReached,
+                ffi::OSQP_PRIMAL_INFEASIBLE => Status::PrimalInfeasible,
+                ffi::OSQP_PRIMAL_INFEASIBLE_INACCURATE => Status::PrimalInfeasibleInaccurate,
+                ffi::OSQP_DUAL_INFEASIBLE => Status::DualInfeasible,
+                ffi::OSQP_DUAL_INFEASIBLE_INACCURATE => Status::DualInfeasibleInaccurate,
                 _ => unreachable!(),
             };
 
