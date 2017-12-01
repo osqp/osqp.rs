@@ -3,11 +3,13 @@ extern crate osqp_sys;
 extern crate static_assertions;
 
 use osqp_sys as ffi;
-use std::borrow::Cow;
 use std::ptr::null_mut;
 use std::slice;
 
 pub use ffi::OSQPSettings as Settings;
+
+mod csc;
+pub use csc::CscMatrix;
 
 #[allow(non_camel_case_types)]
 type float = f64;
@@ -62,8 +64,8 @@ impl Workspace {
 
             // csc_to_ffi ensures sparse matrices have valid structure and that indices do not
             // exceed isize::MAX
-            let mut P_ffi = csc_to_ffi(&P);
-            let mut A_ffi = csc_to_ffi(&A);
+            let mut P_ffi = P.to_ffi();
+            let mut A_ffi = A.to_ffi();
 
             let data = ffi::OSQPData {
                 n: n as ffi::osqp_int,
@@ -246,65 +248,4 @@ pub enum Status {
     PrimalInfeasibleInaccurate,
     DualInfeasible,
     DualInfeasibleInaccurate,
-}
-
-pub struct CscMatrix<'a> {
-    pub nrows: usize,
-    pub ncols: usize,
-    pub indptr: Cow<'a, [usize]>,
-    pub indices: Cow<'a, [usize]>,
-    pub data: Cow<'a, [float]>,
-}
-
-unsafe fn csc_to_ffi(csc: &CscMatrix) -> ffi::csc {
-    assert_valid_csc(csc);
-
-    // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed integer
-    // of the same size as usize/isize
-    ffi::csc {
-        nzmax: csc.data.len() as ffi::osqp_int,
-        m: csc.nrows as ffi::osqp_int,
-        n: csc.ncols as ffi::osqp_int,
-        p: csc.indptr.as_ptr() as *mut usize as *mut ffi::osqp_int,
-        i: csc.indices.as_ptr() as *mut usize as *mut ffi::osqp_int,
-        x: csc.data.as_ptr() as *mut float,
-        nz: -1,
-    }
-}
-
-fn assert_valid_csc(matrix: &CscMatrix) {
-    use std::isize::MAX;
-    let max_idx = MAX as usize;
-    assert!(matrix.nrows <= max_idx);
-    assert!(matrix.ncols <= max_idx);
-    assert!(matrix.indptr.len() <= max_idx);
-    assert!(matrix.indices.len() <= max_idx);
-    assert!(matrix.data.len() <= max_idx);
-
-    // Check row pointers
-    assert_eq!(matrix.indptr[matrix.ncols], matrix.data.len());
-    assert_eq!(matrix.indptr.len(), matrix.ncols + 1);
-    matrix.indptr.iter().fold(0, |acc, i| {
-        assert!(
-            *i >= acc,
-            "csc row pointers must be monotonically nondecreasing"
-        );
-        *i
-    });
-
-    // Check index values
-    assert_eq!(
-        matrix.data.len(),
-        matrix.indices.len(),
-        "csc row indices must be the same length as data"
-    );
-    assert!(matrix.indices.iter().all(|r| *r < matrix.nrows));
-    for i in 0..matrix.ncols {
-        let row_indices = &matrix.indices[matrix.indptr[i] as usize..matrix.indptr[i + 1] as usize];
-        let first_index = *row_indices.get(0).unwrap_or(&0);
-        row_indices.iter().skip(1).fold(first_index, |acc, i| {
-            assert!(*i > acc, "csc row indices must be monotonically increasing");
-            *i
-        });
-    }
 }
