@@ -16,3 +16,72 @@ type c_float = osqp_float;
 
 pub enum OSQPTimer { }
 
+#[cfg(test)]
+mod tests {
+    use std::mem;
+    use super::*;
+
+    extern "C" {
+        fn free(ptr: *mut ());
+        fn csc_matrix(m: c_int, n: c_int, nzmax: c_int, x: *mut c_float, i: *mut c_int, p: *mut c_int) -> *mut csc;
+    }
+
+    // examples/osqp_demo.c converted into rust
+    #[test]
+    fn osqp_demo_rust() {
+        unsafe {
+            osqp_demo_rust_unsafe();
+        }
+    }
+    
+    unsafe fn osqp_demo_rust_unsafe() {
+        // Load problem data
+        let mut P_x: [c_float; 4] = [4.0, 1.0, 1.0, 2.0];
+        let P_nnz: c_int = 4;
+        let mut P_i: [c_int; 4] = [0, 1, 0, 1];
+        let mut P_p: [c_int; 3] = [0, 2, 4];
+        let mut q: [c_float; 2] = [1.0, 1.0];
+        let mut A_x: [c_float; 4] = [1.0, 1.0, 1.0, 1.0];
+        let A_nnz: c_int = 4;
+        let mut A_i: [c_int; 4] = [0, 1, 0, 2];
+        let mut A_p: [c_int; 3] = [0, 2, 4];
+        let mut l: [c_float; 3] = [1.0, 0.0, 0.0];
+        let mut u: [c_float; 3] = [1.0, 0.69999999999999995559, 0.69999999999999995559];
+        let n: c_int = 2;
+        let m: c_int = 3;
+
+        // Populate data
+        let P = csc_matrix(n, n, P_nnz, P_x.as_mut_ptr(), P_i.as_mut_ptr(), P_p.as_mut_ptr());
+        let A = csc_matrix(m, n, A_nnz, A_x.as_mut_ptr(), A_i.as_mut_ptr(), A_p.as_mut_ptr());
+
+        let mut data: OSQPData = mem::zeroed();
+        data.n = n;
+        data.m = m;
+        data.P = P;
+        data.q = q.as_mut_ptr();
+        data.A = A;
+        data.l = l.as_mut_ptr();
+        data.u = u.as_mut_ptr();
+
+        // Define Solver settings as default
+        let mut settings: OSQPSettings = mem::zeroed();
+        set_default_settings(&mut settings);
+
+        // Setup workspace
+        let work: *mut OSQPWorkspace = osqp_setup(&data, &mut settings);
+
+        // Zero data and settings on the stack to ensure osqp does not reference them
+        data = mem::zeroed();
+        settings = mem::zeroed();
+        *P = mem::zeroed();
+        *A = mem::zeroed();
+
+        // Solve Problem
+        osqp_solve(work);
+
+        // Clean workspace
+        osqp_cleanup(work);
+        free(A as *mut ());
+        free(P as *mut ());
+    }
+}
