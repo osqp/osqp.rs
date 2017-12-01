@@ -6,10 +6,11 @@ use osqp_sys as ffi;
 use std::ptr::null_mut;
 use std::slice;
 
-pub use ffi::OSQPSettings as Settings;
-
 mod csc;
 pub use csc::CscMatrix;
+
+mod settings;
+pub use settings::{LinsysSolver, Settings};
 
 #[allow(non_camel_case_types)]
 type float = f64;
@@ -77,7 +78,9 @@ impl Workspace {
                 u: u.as_ptr() as *mut float,
             };
 
-            let inner = ffi::osqp_setup(&data, settings as *const Settings as *mut Settings);
+            let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
+
+            let inner = ffi::osqp_setup(&data, settings);
             assert!(inner as usize != 0, "osqp setup failure");
 
             Workspace {
