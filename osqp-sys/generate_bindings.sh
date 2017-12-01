@@ -1,6 +1,7 @@
 #!/bin/bash
 
 bindgen bindings.h -o src/bindings.rs \
+--distrust-clang-mangling \
 --no-layout-tests \
 --no-recursive-whitelist \
 --no-prepend-enum-name \

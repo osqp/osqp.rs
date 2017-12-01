@@ -279,8 +279,6 @@ extern "C" {
     /// Set default settings from constants.h file
     /// assumes settings already allocated in memory
     /// @param settings settings structure
-
-    #[link_name = "\u{1}_set_default_settings"]
     pub fn set_default_settings(settings: *mut OSQPSettings);
 }
 extern "C" {
@@ -302,8 +300,6 @@ extern "C" {
     /// @param  data         Problem data
     /// @param  settings     Solver settings
     /// @return              Solver environment
-
-    #[link_name = "\u{1}_osqp_setup"]
     pub fn osqp_setup(data: *const OSQPData, settings: *mut OSQPSettings) -> *mut OSQPWorkspace;
 }
 extern "C" {
@@ -322,8 +318,6 @@ extern "C" {
     ///
     /// @param  work Workspace allocated
     /// @return      Exitflag for errors
-
-    #[link_name = "\u{1}_osqp_solve"]
     pub fn osqp_solve(work: *mut OSQPWorkspace) -> c_int;
 }
 extern "C" {
@@ -333,8 +327,6 @@ extern "C" {
     /// This function is not used in code generation
     /// @param  work Workspace
     /// @return      Exitflag for errors
-
-    #[link_name = "\u{1}_osqp_cleanup"]
     pub fn osqp_cleanup(work: *mut OSQPWorkspace) -> c_int;
 }
 extern "C" {
@@ -343,8 +335,6 @@ extern "C" {
     /// @param  work  Workspace
     /// @param  q_new New linear cost
     /// @return       Exitflag for errors and warnings
-
-    #[link_name = "\u{1}_osqp_update_lin_cost"]
     pub fn osqp_update_lin_cost(work: *mut OSQPWorkspace, q_new: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -354,8 +344,6 @@ extern "C" {
     /// @param  l_new New lower bound
     /// @param  u_new New upper bound
     /// @return        Exitflag: 1 if new lower bound is not <= than new upper bound
-
-    #[link_name = "\u{1}_osqp_update_bounds"]
     pub fn osqp_update_bounds(
         work: *mut OSQPWorkspace,
         l_new: *mut c_float,
@@ -368,8 +356,6 @@ extern "C" {
     /// @param  work   Workspace
     /// @param  l_new New lower bound
     /// @return        Exitflag: 1 if new lower bound is not <= than upper bound
-
-    #[link_name = "\u{1}_osqp_update_lower_bound"]
     pub fn osqp_update_lower_bound(work: *mut OSQPWorkspace, l_new: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -378,8 +364,6 @@ extern "C" {
     /// @param  work   Workspace
     /// @param  u_new New upper bound
     /// @return        Exitflag: 1 if new upper bound is not >= than lower bound
-
-    #[link_name = "\u{1}_osqp_update_upper_bound"]
     pub fn osqp_update_upper_bound(work: *mut OSQPWorkspace, u_new: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -389,8 +373,6 @@ extern "C" {
     /// @param  x    Primal variable
     /// @param  y    Dual variable
     /// @return      Exitflag
-
-    #[link_name = "\u{1}_osqp_warm_start"]
     pub fn osqp_warm_start(work: *mut OSQPWorkspace, x: *mut c_float, y: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -399,8 +381,6 @@ extern "C" {
     /// @param  work Workspace structure
     /// @param  x    Primal variable
     /// @return      Exitflag
-
-    #[link_name = "\u{1}_osqp_warm_start_x"]
     pub fn osqp_warm_start_x(work: *mut OSQPWorkspace, x: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -409,8 +389,6 @@ extern "C" {
     /// @param  work Workspace structure
     /// @param  y    Dual variable
     /// @return      Exitflag
-
-    #[link_name = "\u{1}_osqp_warm_start_y"]
     pub fn osqp_warm_start_y(work: *mut OSQPWorkspace, y: *mut c_float) -> c_int;
 }
 extern "C" {
@@ -429,8 +407,6 @@ extern "C" {
     /// @return            output flag:  0: OK
     /// 1: P_new_n > nnzP
     /// <0: error in the update
-
-    #[link_name = "\u{1}_osqp_update_P"]
     pub fn osqp_update_P(
         work: *mut OSQPWorkspace,
         Px_new: *mut c_float,
@@ -453,8 +429,6 @@ extern "C" {
     /// @return            output flag:  0: OK
     /// 1: A_new_n > nnzA
     /// <0: error in the update
-
-    #[link_name = "\u{1}_osqp_update_A"]
     pub fn osqp_update_A(
         work: *mut OSQPWorkspace,
         Ax_new: *mut c_float,
@@ -485,8 +459,6 @@ extern "C" {
     /// 1: P_new_n > nnzP
     /// 2: A_new_n > nnzA
     /// <0: error in the update
-
-    #[link_name = "\u{1}_osqp_update_P_A"]
     pub fn osqp_update_P_A(
         work: *mut OSQPWorkspace,
         Px_new: *mut c_float,
@@ -503,8 +475,6 @@ extern "C" {
     /// @param  work         Workspace
     /// @param  rho_new      New rho setting
     /// @return              Exitflag
-
-    #[link_name = "\u{1}_osqp_update_rho"]
     pub fn osqp_update_rho(work: *mut OSQPWorkspace, rho_new: c_float) -> c_int;
 }
 extern "C" {
@@ -513,8 +483,6 @@ extern "C" {
     /// @param  work         Workspace
     /// @param  max_iter_new New max_iter setting
     /// @return              Exitflag
-
-    #[link_name = "\u{1}_osqp_update_max_iter"]
     pub fn osqp_update_max_iter(work: *mut OSQPWorkspace, max_iter_new: c_int) -> c_int;
 }
 extern "C" {
@@ -523,8 +491,6 @@ extern "C" {
     /// @param  work        Workspace
     /// @param  eps_abs_new New absolute tolerance value
     /// @return             Exitflag
-
-    #[link_name = "\u{1}_osqp_update_eps_abs"]
     pub fn osqp_update_eps_abs(work: *mut OSQPWorkspace, eps_abs_new: c_float) -> c_int;
 }
 extern "C" {
@@ -533,8 +499,6 @@ extern "C" {
     /// @param  work        Workspace
     /// @param  eps_rel_new New relative tolerance value
     /// @return             Exitflag
-
-    #[link_name = "\u{1}_osqp_update_eps_rel"]
     pub fn osqp_update_eps_rel(work: *mut OSQPWorkspace, eps_rel_new: c_float) -> c_int;
 }
 extern "C" {
@@ -543,8 +507,6 @@ extern "C" {
     /// @param  work          Workspace
     /// @param  eps_prim_inf_new  New primal infeasibility tolerance
     /// @return               Exitflag
-
-    #[link_name = "\u{1}_osqp_update_eps_prim_inf"]
     pub fn osqp_update_eps_prim_inf(work: *mut OSQPWorkspace, eps_prim_inf_new: c_float) -> c_int;
 }
 extern "C" {
@@ -553,8 +515,6 @@ extern "C" {
     /// @param  work          Workspace
     /// @param  eps_dual_inf_new  New dual infeasibility tolerance
     /// @return               Exitflag
-
-    #[link_name = "\u{1}_osqp_update_eps_dual_inf"]
     pub fn osqp_update_eps_dual_inf(work: *mut OSQPWorkspace, eps_dual_inf_new: c_float) -> c_int;
 }
 extern "C" {
@@ -563,8 +523,6 @@ extern "C" {
     /// @param  work  Workspace
     /// @param  alpha_new New relaxation parameter value
     /// @return       Exitflag
-
-    #[link_name = "\u{1}_osqp_update_alpha"]
     pub fn osqp_update_alpha(work: *mut OSQPWorkspace, alpha_new: c_float) -> c_int;
 }
 extern "C" {
@@ -573,8 +531,6 @@ extern "C" {
     /// @param  work           Workspace
     /// @param  warm_start_new New warm_start setting
     /// @return                Exitflag
-
-    #[link_name = "\u{1}_osqp_update_warm_start"]
     pub fn osqp_update_warm_start(work: *mut OSQPWorkspace, warm_start_new: c_int) -> c_int;
 }
 extern "C" {
@@ -583,8 +539,6 @@ extern "C" {
     /// @param  work                 Workspace
     /// @param  scaled_termination_new  New scaled_termination setting
     /// @return                      Exitflag
-
-    #[link_name = "\u{1}_osqp_update_scaled_termination"]
     pub fn osqp_update_scaled_termination(
         work: *mut OSQPWorkspace,
         scaled_termination_new: c_int,
@@ -596,8 +550,6 @@ extern "C" {
     /// @param  work                   Workspace
     /// @param  check_termination_new  New check_termination setting
     /// @return                        Exitflag
-
-    #[link_name = "\u{1}_osqp_update_check_termination"]
     pub fn osqp_update_check_termination(
         work: *mut OSQPWorkspace,
         check_termination_new: c_int,
@@ -609,8 +561,6 @@ extern "C" {
     /// @param  work      Workspace
     /// @param  delta_new New regularization parameter
     /// @return           Exitflag
-
-    #[link_name = "\u{1}_osqp_update_delta"]
     pub fn osqp_update_delta(work: *mut OSQPWorkspace, delta_new: c_float) -> c_int;
 }
 extern "C" {
@@ -619,8 +569,6 @@ extern "C" {
     /// @param  work          Workspace
     /// @param  polish_new New polish setting
     /// @return               Exitflag
-
-    #[link_name = "\u{1}_osqp_update_polish"]
     pub fn osqp_update_polish(work: *mut OSQPWorkspace, polish_new: c_int) -> c_int;
 }
 extern "C" {
@@ -629,8 +577,6 @@ extern "C" {
     /// @param  work                Workspace
     /// @param  polish_refine_iter_new New iterative reginement steps
     /// @return                     Exitflag
-
-    #[link_name = "\u{1}_osqp_update_polish_refine_iter"]
     pub fn osqp_update_polish_refine_iter(
         work: *mut OSQPWorkspace,
         polish_refine_iter_new: c_int,
@@ -642,8 +588,6 @@ extern "C" {
     /// @param  work        Workspace
     /// @param  verbose_new New verbose setting
     /// @return             Exitflag
-
-    #[link_name = "\u{1}_osqp_update_verbose"]
     pub fn osqp_update_verbose(work: *mut OSQPWorkspace, verbose_new: c_int) -> c_int;
 }
 pub const OSQP_DUAL_INFEASIBLE_INACCURATE: ffi_osqp_status = 4;
