@@ -4,13 +4,15 @@ extern crate static_assertions;
 
 use osqp_sys as ffi;
 use std::ptr::null_mut;
-use std::slice;
 
 mod csc;
 pub use csc::CscMatrix;
 
 mod settings;
 pub use settings::{LinsysSolver, Settings};
+
+mod solution;
+pub use solution::{Solution, Status};
 
 #[allow(non_camel_case_types)]
 type float = f64;
@@ -207,24 +209,7 @@ impl Workspace {
     pub fn solve<'a>(&'a mut self) -> Solution<'a> {
         unsafe {
             check!(ffi::osqp_solve(self.inner));
-
-            use std::os::raw::c_int;
-            let status = match (*(*self.inner).info).status_val as c_int {
-                ffi::OSQP_SOLVED => Status::Solved,
-                ffi::OSQP_SOLVED_INACCURATE => Status::SolvedInaccurate,
-                ffi::OSQP_MAX_ITER_REACHED => Status::MaxIterationsReached,
-                ffi::OSQP_PRIMAL_INFEASIBLE => Status::PrimalInfeasible,
-                ffi::OSQP_PRIMAL_INFEASIBLE_INACCURATE => Status::PrimalInfeasibleInaccurate,
-                ffi::OSQP_DUAL_INFEASIBLE => Status::DualInfeasible,
-                ffi::OSQP_DUAL_INFEASIBLE_INACCURATE => Status::DualInfeasibleInaccurate,
-                _ => unreachable!(),
-            };
-
-            Solution {
-                status,
-                x: slice::from_raw_parts((*(*self.inner).solution).x, self.n),
-                y: slice::from_raw_parts((*(*self.inner).solution).y, self.m),
-            }
+            Solution { ws: self }
         }
     }
 }
@@ -235,24 +220,4 @@ impl Drop for Workspace {
             ffi::osqp_cleanup(self.inner);
         }
     }
-}
-
-pub struct Solution<'a> {
-    pub status: Status,
-    pub x: &'a [float],
-    pub y: &'a [float],
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Status {
-    Solved,
-    SolvedInaccurate,
-    MaxIterationsReached,
-    PrimalInfeasible,
-    PrimalInfeasibleInaccurate,
-    DualInfeasible,
-    DualInfeasibleInaccurate,
-    // Prevent exhaustive enum matching
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
