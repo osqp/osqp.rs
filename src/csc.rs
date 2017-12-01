@@ -64,3 +64,44 @@ impl<'a> CscMatrix<'a> {
         }
     }
 }
+
+impl<'a, I: 'a, J: 'a> From<I> for CscMatrix<'static>
+where
+    I: IntoIterator<Item = J>,
+    J: IntoIterator<Item = &'a float>,
+{
+    fn from(rows: I) -> CscMatrix<'static> {
+        let rows: Vec<Vec<float>> = rows.into_iter()
+            .map(|r| r.into_iter().map(|&v| v).collect())
+            .collect();
+
+        let nrows = rows.len();
+        let ncols = rows.iter().map(|r| r.len()).next().unwrap_or(0);
+        assert!(rows.iter().all(|r| r.len() == ncols));
+        let nnz = rows.iter().flat_map(|r| r).filter(|&&v| v != 0.0).count();
+
+        let mut indptr = Vec::with_capacity(ncols + 1);
+        let mut indices = Vec::with_capacity(nnz);
+        let mut data = Vec::with_capacity(nnz);
+
+        indptr.push(0);
+        for c in 0..ncols {
+            for r in 0..nrows {
+                let value = rows[r][c];
+                if value != 0.0 {
+                    indices.push(r);
+                    data.push(value);
+                }
+            }
+            indptr.push(data.len());
+        }
+
+        CscMatrix {
+            nrows,
+            ncols,
+            indptr: indptr.into(),
+            indices: indices.into(),
+            data: data.into(),
+        }
+    }
+}

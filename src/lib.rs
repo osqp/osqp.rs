@@ -1,3 +1,44 @@
+//! # Example
+//! 
+//! Consider the following QP
+//! 
+//! <div style="text-align:center">
+//! <img src="example_qp.svg" alt="Example QP" />
+//! </div>
+//! 
+//! ```rust
+//! use osqp::{Settings, Workspace};
+//!
+//! // Define problem data
+//! let P = &[[4.0, 1.0],
+//!           [1.0, 2.0]];
+//! let q = &[1.0, 1.0];
+//! let A = &[[1.0, 1.0],
+//!           [1.0, 0.0],
+//!           [0.0, 1.0]];
+//! let l = &[1.0, 0.0, 0.0];
+//! let u = &[1.0, 0.7, 0.7];
+//!
+//! // Change the default alpha and disable verbose output
+//! let settings = Settings::default()
+//!     .alpha(1.0)
+//!     .verbose(false);
+//!
+//! // Create an OSQP workspace
+//! let mut workspace = Workspace::new(P.into(), q, A.into(), l, u, &settings);
+//!
+//! // Solve problem
+//! let solution = workspace.solve();
+//!
+//! // Print the solution
+//! println!("{:?}", solution.x());
+//! #
+//! # // Check the solution
+//! # let expected = &[0.2987710845986426, 0.701227995544065];
+//! # assert_eq!(expected.len(), solution.x().len());
+//! # assert!(expected.iter().zip(solution.x()).all(|(&a, &b)| (a - b).abs() < 1e-9));
+//! ```
+
 extern crate osqp_sys;
 #[macro_use]
 extern crate static_assertions;
