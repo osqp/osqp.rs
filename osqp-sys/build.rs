@@ -17,9 +17,12 @@ fn main() {
         "64" => {
             println!(r#"cargo:rustc-cfg=feature="osqp_dlong""#);
             "ON"
-        },
+        }
         "32" => "OFF",
-        other => panic!("{} bit targets are currently unsupported. please file a bug.", other),
+        other => panic!(
+            "{} bit targets are not supported. If you want this feature please file a bug.",
+            other
+        ),
     };
 
     // TODO: Figure out the story around cmake and cross-compilation
