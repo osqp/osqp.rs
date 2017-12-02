@@ -1,3 +1,6 @@
+os:
+  - linux
+  - osx
 language: rust
 rust:
   - 1.20.0
@@ -17,4 +20,5 @@ deploy:
   local_dir: target/doc/
   on:
     branch: master
+    os: linux
     rust: nightly
