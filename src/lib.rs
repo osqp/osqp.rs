@@ -1,11 +1,11 @@
 //! # Example
-//! 
+//!
 //! Consider the following QP
-//! 
+//!
 //! <div style="text-align:center">
 //! <img src="example_qp.svg" alt="Example QP" />
 //! </div>
-//! 
+//!
 //! ```rust
 //! use osqp::{Settings, Workspace};
 //!
@@ -26,7 +26,7 @@
 //! # let settings = settings.adaptive_rho(false);
 //!
 //! // Create an OSQP workspace
-//! let mut workspace = Workspace::new(P.into(), q, A.into(), l, u, &settings);
+//! let mut workspace = Workspace::new(P, q, A, l, u, &settings);
 //!
 //! // Solve problem
 //! let solution = workspace.solve();
@@ -83,7 +83,20 @@ pub struct Workspace {
 
 impl Workspace {
     #[allow(non_snake_case)]
-    pub fn new(
+    pub fn new<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
+        P: T,
+        q: &[float],
+        A: U,
+        l: &[float],
+        u: &[float],
+        settings: &Settings,
+    ) -> Workspace {
+        // Function split to avoid monomorphising the main body of Workspace::new.
+        Workspace::new_inner(P.into(), q, A.into(), l, u, settings)
+    }
+
+    #[allow(non_snake_case)]
+    fn new_inner(
         P: CscMatrix,
         q: &[float],
         A: CscMatrix,
