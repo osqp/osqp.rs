@@ -10,8 +10,16 @@ pub enum LinsysSolver {
     #[doc(hidden)] __Nonexhaustive,
 }
 
-fn u32_to_osqp_int(val: u32) -> ffi::osqp_int {
-    val as ffi::osqp_int
+macro_rules! u32_to_osqp_int {
+    ($name:ident, $value:expr) => ({
+        let value = $value;
+        assert!(
+            value as u64 <= ffi::osqp_int::max_value() as u64,
+            "{} must be smaller than the largest isize value",
+            stringify!($name)
+        );
+        value as ffi::osqp_int
+    });
 }
 
 macro_rules! rust_type {
@@ -23,11 +31,11 @@ macro_rules! rust_type {
 }
 
 macro_rules! convert_rust_type {
-    (float, $value:expr) => ($value);
-    (u32, $value:expr) => (u32_to_osqp_int($value));
-    (option_u32, $value:expr) => (u32_to_osqp_int($value.unwrap_or(0)));
-    (bool, $value:expr) => ($value as ffi::osqp_int);
-    (linsys_solver, $value:expr) => (
+    ($name:ident, float, $value:expr) => ($value);
+    ($name:ident, u32, $value:expr) => (u32_to_osqp_int!($name, $value));
+    ($name:ident, option_u32, $value:expr) => (u32_to_osqp_int!($name, $value.unwrap_or(0)));
+    ($name:ident, bool, $value:expr) => ($value as ffi::osqp_int);
+    ($name:ident, linsys_solver, $value:expr) => (
         match $value {
             LinsysSolver::SuiteSparse => ffi::SUITESPARSE_LDL_SOLVER,
             LinsysSolver::MklPardiso => ffi::MKL_PARDISO_SOLVER,
@@ -37,7 +45,9 @@ macro_rules! convert_rust_type {
 }
 
 macro_rules! settings {
-    ($workspace:path, $(#[$doc:meta] $name:ident: $typ:ident $([$update_name:ident, $update_ffi:ident])*,)*) => (
+    ($workspace:path, $(
+        #[$doc:meta] $name:ident: $typ:ident $([$update_name:ident, $update_ffi:ident])*,
+    )*) => (
         pub struct Settings {
             pub(crate) inner: ffi::OSQPSettings,
         }
@@ -46,7 +56,7 @@ macro_rules! settings {
             $(
                 #[$doc]
                 pub fn $name(mut self, value: rust_type!($typ)) -> Settings {
-                    self.inner.$name = convert_rust_type!($typ, value);
+                    self.inner.$name = convert_rust_type!($name, $typ, value);
                     Settings {
                         inner: self.inner
                     }
@@ -71,7 +81,13 @@ macro_rules! settings {
                 #[$doc]
                 pub fn $update_name(&mut self, value: rust_type!($typ)) {
                     unsafe {
-                        ffi::$update_ffi(self.inner, convert_rust_type!($typ, value));
+                        let ret = ffi::$update_ffi(
+                            self.inner,
+                            convert_rust_type!($name, $typ, value)
+                        );
+                        if ret != 0 {
+                            panic!("updating {} failed", stringify!($name));
+                        }
                     }
                 }
             )*)*
