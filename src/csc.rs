@@ -65,6 +65,19 @@ impl<'a> CscMatrix<'a> {
     }
 }
 
+// Any &CscMatrix can be converted into a CscMatrix without allocation due to the use of Cow.
+impl<'a, 'b: 'a> From<&'a CscMatrix<'b>> for CscMatrix<'a> {
+    fn from(mat: &'a CscMatrix<'b>) -> CscMatrix<'a> {
+        CscMatrix {
+            nrows: mat.nrows,
+            ncols: mat.ncols,
+            indptr: (*mat.indptr).into(),
+            indices: (*mat.indices).into(),
+            data: (*mat.data).into(),
+        }
+    }
+}
+
 // Enable creating a csc matrix from a slice of arrays for testing and small problems.
 //
 // let A: CscMatrix = (&[[1.0, 2.0],
@@ -114,6 +127,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+
     use super::*;
 
     #[test]
@@ -126,5 +141,29 @@ mod tests {
         assert_eq!(&[0, 2, 4], &*csc.indptr);
         assert_eq!(&[0, 1, 0, 2], &*csc.indices);
         assert_eq!(&[1.0, 3.0, 2.0, 4.0], &*csc.data);
+    }
+
+    #[test]
+    fn csc_from_ref() {
+        let mat = &[[1.0, 2.0], [3.0, 0.0], [0.0, 4.0]];
+        let csc: CscMatrix = mat.into();
+        let csc_ref: CscMatrix = (&csc).into();
+
+        // csc_ref must be created without allocation
+        if let Cow::Owned(_) = csc_ref.indptr {
+            panic!();
+        }
+        if let Cow::Owned(_) = csc_ref.indices {
+            panic!();
+        }
+        if let Cow::Owned(_) = csc_ref.data {
+            panic!();
+        }
+
+        assert_eq!(csc.nrows, csc_ref.nrows);
+        assert_eq!(csc.ncols, csc_ref.ncols);
+        assert_eq!(csc.indptr, csc_ref.indptr);
+        assert_eq!(csc.indices, csc_ref.indices);
+        assert_eq!(csc.data, csc_ref.data);
     }
 }
