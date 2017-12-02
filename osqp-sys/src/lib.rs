@@ -14,7 +14,7 @@ pub type osqp_float = f64;
 type c_int = osqp_int;
 type c_float = osqp_float;
 
-pub enum OSQPTimer { }
+pub enum OSQPTimer {}
 
 #[cfg(test)]
 mod tests {
@@ -22,7 +22,7 @@ mod tests {
     use super::*;
 
     extern "C" {
-        fn free(ptr: *mut ());
+        fn free(ptr: *mut u8);
         fn csc_matrix(
             m: c_int,
             n: c_int,
@@ -115,7 +115,7 @@ mod tests {
 
         // Clean workspace
         osqp_cleanup(work);
-        free(A as *mut ());
-        free(P as *mut ());
+        free(A as *mut u8);
+        free(P as *mut u8);
     }
 }
