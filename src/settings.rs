@@ -2,12 +2,12 @@ use std::mem;
 
 use {Workspace, float, osqp_sys as ffi};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LinsysSolver {
     SuiteSparse,
     MklPardiso,
     // Prevent exhaustive enum matching
-    #[doc(hidden)]
-    __Nonexhaustive,
+    #[doc(hidden)] __Nonexhaustive,
 }
 
 fn u32_to_osqp_int(val: u32) -> ffi::osqp_int {
