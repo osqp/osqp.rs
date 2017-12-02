@@ -65,6 +65,12 @@ impl<'a> CscMatrix<'a> {
     }
 }
 
+// Enable creating a csc matrix from a slice of arrays for testing and small problems.
+//
+// let A: CscMatrix = (&[[1.0, 2.0],
+//                       [3.0, 0.0],
+//                       [0.0, 4.0]]).into;
+//
 impl<'a, I: 'a, J: 'a> From<I> for CscMatrix<'static>
 where
     I: IntoIterator<Item = J>,
@@ -103,5 +109,22 @@ where
             indices: indices.into(),
             data: data.into(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn csc_from_array() {
+        let mat = &[[1.0, 2.0], [3.0, 0.0], [0.0, 4.0]];
+        let csc: CscMatrix = mat.into();
+
+        assert_eq!(3, csc.nrows);
+        assert_eq!(2, csc.ncols);
+        assert_eq!(&[0, 2, 4], &*csc.indptr);
+        assert_eq!(&[0, 1, 0, 2], &*csc.indices);
+        assert_eq!(&[1.0, 3.0, 2.0, 4.0], &*csc.data);
     }
 }
