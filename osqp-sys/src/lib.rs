@@ -83,18 +83,21 @@ mod tests {
         data.A = A;
         data.l = l.as_mut_ptr();
         data.u = u.as_mut_ptr();
+        let data = &data as *const OSQPData;
 
         // Define solver settings
         let mut settings: OSQPSettings = mem::zeroed();
         set_default_settings(&mut settings);
         settings.alpha = 1.0;
+        settings.adaptive_rho = 0;
+        let settings = &mut settings as *mut OSQPSettings;
 
         // Setup workspace
-        let work: *mut OSQPWorkspace = osqp_setup(&data, &mut settings);
+        let work: *mut OSQPWorkspace = osqp_setup(data, settings);
 
         // Zero data and settings on the stack to ensure osqp does not reference them
-        data = mem::zeroed();
-        settings = mem::zeroed();
+        *(data as *mut OSQPData) = mem::zeroed();
+        *settings = mem::zeroed();
         *P = mem::zeroed();
         *A = mem::zeroed();
 

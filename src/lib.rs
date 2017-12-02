@@ -23,6 +23,7 @@
 //! let settings = Settings::default()
 //!     .alpha(1.0)
 //!     .verbose(false);
+//! # let settings = settings.adaptive_rho(false);
 //!
 //! // Create an OSQP workspace
 //! let mut workspace = Workspace::new(P.into(), q, A.into(), l, u, &settings);
