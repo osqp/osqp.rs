@@ -1,6 +1,6 @@
 [package]
 name = "osqp-sys"
-version = "0.2.1"
+version = "0.2.1-pre.1"
 authors = ["Edward Barnard <eabarnard@gmail.com>"]
 license = "MIT/Apache-2.0"
 links = "osqp"
