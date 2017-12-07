@@ -1,9 +1,28 @@
+//! <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+//! 
+//! <p>
+//! The OSQP (Operator Splitting Quadratic Program) solver is a numerical optimization package for
+//! solving convex quadratic programs in the form
+//! 
+//! \[\begin{split}\begin{array}{ll}
+//!   \mbox{minimize} &amp; \frac{1}{2} x^T P x + q^T x \\
+//!   \mbox{subject to} &amp; l \leq A x \leq u
+//! \end{array}\end{split}\]
+//! 
+//! where \(x\) is the optimization variable and \(P \in \mathbf{S}^{n}_{+}\) a positive semidefinite matrix.
+//! </p>
+//! 
+//! Further information about the solver is available at [osqp.readthedocs.io](https://osqp.readthedocs.io/).
+//! 
 //! # Example
 //!
 //! Consider the following QP
 //!
-//! <div style="text-align:center">
-//! <img src="example_qp.svg" alt="Example QP" />
+//! <div class="math">
+//! \[\begin{split}\begin{array}{ll}
+//!   \mbox{minimize} &amp; \frac{1}{2} x^T \begin{bmatrix}4 &amp; 1\\ 1 &amp; 2 \end{bmatrix} x + \begin{bmatrix}1 \\ 1\end{bmatrix}^T x \\
+//!   \mbox{subject to} &amp; \begin{bmatrix}1 \\ 0 \\ 0\end{bmatrix} \leq \begin{bmatrix} 1 &amp; 1\\ 1 &amp; 0\\ 0 &amp; 1\end{bmatrix} x \leq  \begin{bmatrix}1 \\ 0.7 \\ 0.7\end{bmatrix}
+//! \end{array}\end{split}\]
 //! </div>
 //!
 //! ```rust
