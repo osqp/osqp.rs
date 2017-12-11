@@ -1,6 +1,7 @@
+use osqp_sys as ffi;
 use std::mem;
 
-use {Workspace, float, osqp_sys as ffi};
+use {float, Workspace};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LinsysSolver {
@@ -106,7 +107,7 @@ settings! {
 
     #[doc = "
     Set the number of heuristic data scaling iterations.
-    
+
     If `None` scaling is disabled.
     "]
     scaling: option_u32,
@@ -116,15 +117,16 @@ settings! {
 
     #[doc = "
     Set the number of iterations between rho adaptations.
-    
+
     If `None` it is automatic.
     "]
     adaptive_rho_interval: option_u32,
 
     #[doc = "
     Set the tolerance for adapting rho.
-    
-    The new rho has to be `x` times larger or `1/x` times smaller than the current rho to trigger a new factorization.
+
+    The new rho has to be `x` times larger or `1/x` times smaller than the current rho to trigger
+    a new factorization.
     "]
     adaptive_rho_tolerance: float,
 
@@ -169,7 +171,7 @@ settings! {
 
     #[doc = "
     Set the number of ADMM iterations between termination checks.
-    
+
     If `None` termination checking is disabled.
     "]
     check_termination: option_u32 [update_check_termination, osqp_update_check_termination],

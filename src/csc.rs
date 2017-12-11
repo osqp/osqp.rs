@@ -1,6 +1,7 @@
+use osqp_sys as ffi;
 use std::borrow::Cow;
 
-use {float, osqp_sys as ffi};
+use float;
 
 pub struct CscMatrix<'a> {
     pub nrows: usize,
@@ -14,8 +15,8 @@ impl<'a> CscMatrix<'a> {
     pub(crate) unsafe fn to_ffi(&self) -> ffi::csc {
         self.assert_valid();
 
-        // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed integer
-        // of the same size as usize/isize
+        // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed
+        // integer of the same size as usize/isize.
         ffi::csc {
             nzmax: self.data.len() as ffi::osqp_int,
             m: self.nrows as ffi::osqp_int,

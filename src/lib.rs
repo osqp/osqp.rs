@@ -1,19 +1,21 @@
 //! <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-//! 
+//!
 //! <p>
 //! The OSQP (Operator Splitting Quadratic Program) solver is a numerical optimization package for
 //! solving convex quadratic programs in the form
-//! 
+//!
 //! \[\begin{split}\begin{array}{ll}
 //!   \mbox{minimize} &amp; \frac{1}{2} x^T P x + q^T x \\
 //!   \mbox{subject to} &amp; l \leq A x \leq u
 //! \end{array}\end{split}\]
-//! 
-//! where \(x\) is the optimization variable and \(P \in \mathbf{S}^{n}_{+}\) a positive semidefinite matrix.
+//!
+//! where \(x\) is the optimization variable and \(P \in \mathbf{S}^{n}_{+}\) a positive
+//! semidefinite matrix.
 //! </p>
-//! 
-//! Further information about the solver is available at [osqp.readthedocs.io](https://osqp.readthedocs.io/).
-//! 
+//!
+//! Further information about the solver is available at
+//! [osqp.readthedocs.io](https://osqp.readthedocs.io/).
+//!
 //! # Example
 //!
 //! Consider the following QP
