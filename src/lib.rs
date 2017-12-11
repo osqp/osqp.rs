@@ -96,10 +96,8 @@ pub struct Workspace {
     n: usize,
     /// Number of constraints
     m: usize,
-    /// Number of data values in P
-    P_nnz: usize,
-    /// Number of data values in A
-    A_nnz: usize,
+    /// P upper triangle CSC data
+    P_upper_tri_data: Vec<float>,
 }
 
 impl Workspace {
@@ -165,8 +163,7 @@ impl Workspace {
                 inner,
                 n,
                 m,
-                P_nnz: P.data.len(),
-                A_nnz: A.data.len(),
+                P_upper_tri_data: Vec::with_capacity((P.data.len() + n + 1) / 2),
             }
         }
     }
@@ -240,45 +237,96 @@ impl Workspace {
     }
 
     #[allow(non_snake_case)]
-    pub fn update_P(&mut self, P_data: &[float]) {
+    pub fn update_P<'a, T: Into<CscMatrix<'a>>>(&mut self, P: T) {
+        self.update_P_inner(P.into());
+    }
+
+    #[allow(non_snake_case)]
+    fn update_P_inner(&mut self, P: CscMatrix) {
         unsafe {
-            assert_eq!(self.P_nnz, P_data.len());
+            P.assert_valid();
+            let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
+            P.assert_same_upper_tri_sparsity_structure(&P_ffi);
+
+            self.fill_P_upper_tri_data(P);
             check!(ffi::osqp_update_P(
                 self.inner,
-                P_data.as_ptr() as *mut float,
+                self.P_upper_tri_data.as_ptr() as *mut float,
                 null_mut(),
-                P_data.len() as ffi::osqp_int
+                self.P_upper_tri_data.len() as ffi::osqp_int
             ));
         }
     }
 
     #[allow(non_snake_case)]
-    pub fn update_A(&mut self, A_data: &[float]) {
+    pub fn update_A<'a, T: Into<CscMatrix<'a>>>(&mut self, A: T) {
+        self.update_A_inner(A.into());
+    }
+
+    #[allow(non_snake_case)]
+    fn update_A_inner(&mut self, A: CscMatrix) {
         unsafe {
-            assert_eq!(self.A_nnz, A_data.len());
+            A.assert_valid();
+            let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
+            A.assert_same_sparsity_structure(&A_ffi);
+
             check!(ffi::osqp_update_A(
                 self.inner,
-                A_data.as_ptr() as *mut float,
+                A.data.as_ptr() as *mut float,
                 null_mut(),
-                A_data.len() as ffi::osqp_int
+                A.data.len() as ffi::osqp_int
             ));
         }
     }
 
     #[allow(non_snake_case)]
-    pub fn update_P_A(&mut self, P_data: &[float], A_data: &[float]) {
+    pub fn update_P_A<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
+        &mut self,
+        P: T,
+        A: U,
+    ) {
+        self.update_P_A_inner(P.into(), A.into());
+    }
+
+    #[allow(non_snake_case)]
+    fn update_P_A_inner(&mut self, P: CscMatrix, A: CscMatrix) {
         unsafe {
-            assert_eq!(self.P_nnz, P_data.len());
-            assert_eq!(self.A_nnz, A_data.len());
+            P.assert_valid();
+            let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
+            P.assert_same_upper_tri_sparsity_structure(&P_ffi);
+
+            A.assert_valid();
+            let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
+            A.assert_same_sparsity_structure(&A_ffi);
+
+            self.fill_P_upper_tri_data(P);
             check!(ffi::osqp_update_P_A(
                 self.inner,
-                P_data.as_ptr() as *mut float,
+                self.P_upper_tri_data.as_ptr() as *mut float,
                 null_mut(),
-                P_data.len() as ffi::osqp_int,
-                A_data.as_ptr() as *mut float,
+                self.P_upper_tri_data.len() as ffi::osqp_int,
+                A.data.as_ptr() as *mut float,
                 null_mut(),
-                A_data.len() as ffi::osqp_int,
+                A.data.len() as ffi::osqp_int,
             ));
+        }
+    }
+
+    /// Copy the upper triangular elements of P to self.P_upper_tri_data
+    #[allow(non_snake_case)]
+    fn fill_P_upper_tri_data(&mut self, P: CscMatrix) {
+        self.P_upper_tri_data.truncate(0);
+
+        let mut col_start_idx = 0;
+        for (col_num, &col_end_idx) in P.indptr.iter().skip(1).enumerate() {
+            for (row_idx, &row_num) in P.indices[col_start_idx..col_end_idx].iter().enumerate() {
+                // Copy only the diagonal and all elements above it
+                if row_num > col_num {
+                    break;
+                }
+                self.P_upper_tri_data.push(P.data[col_start_idx + row_idx]);
+            }
+            col_start_idx = col_end_idx;
         }
     }
 
@@ -295,5 +343,55 @@ impl Drop for Workspace {
         unsafe {
             ffi::osqp_cleanup(self.inner);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn update_matrices() {
+        // Define problem data
+        let P_wrong = &[[2.0, 1.0], [1.0, 4.0]];
+        let A_wrong = &[[2.0, 3.0], [1.0, 0.0], [0.0, 9.0]];
+
+        let P = &[[4.0, 1.0], [1.0, 2.0]];
+        let q = &[1.0, 1.0];
+        let A = &[[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]];
+        let l = &[1.0, 0.0, 0.0];
+        let u = &[1.0, 0.7, 0.7];
+
+        // Change the default alpha and disable verbose output
+        let settings = Settings::default().alpha(1.0).verbose(false);
+        let settings = settings.adaptive_rho(false);
+
+        // Check updating P and A together
+        let mut workspace = Workspace::new(P_wrong, q, A_wrong, l, u, &settings);
+        workspace.update_P_A(P, A);
+        let solution = workspace.solve();
+        let expected = &[0.2987710845986426, 0.701227995544065];
+        assert_eq!(expected.len(), solution.x().len());
+        assert!(
+            expected
+                .iter()
+                .zip(solution.x())
+                .all(|(&a, &b)| (a - b).abs() < 1e-9)
+        );
+
+        // Check updating P and A separately
+        let mut workspace = Workspace::new(P_wrong, q, A_wrong, l, u, &settings);
+        workspace.update_P(P);
+        workspace.update_A(A);
+        let solution = workspace.solve();
+        let expected = &[0.2987710845986426, 0.701227995544065];
+        assert_eq!(expected.len(), solution.x().len());
+        assert!(
+            expected
+                .iter()
+                .zip(solution.x())
+                .all(|(&a, &b)| (a - b).abs() < 1e-9)
+        );
     }
 }
