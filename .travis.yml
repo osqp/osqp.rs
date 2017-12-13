@@ -1,12 +1,33 @@
-os:
-  - linux
-  - osx
-language: rust
-rust:
-  - 1.20.0
-  - stable
-  - beta
-  - nightly
+language: shell
+matrix:
+  include:
+    - os: linux
+      env:
+        - CHANNEL=stable
+        - TARGET=x86_64-unknown-linux-gnu
+    - os: osx
+      env:
+        - CHANNEL=stable
+        - TARGET=x86_64-apple-darwin
+    - os: osx
+      env:
+        - CHANNEL=stable
+        - TARGET=i686-apple-darwin
+    - os: linux
+      env:
+        - CHANNEL=1.20.0
+        - TARGET=x86_64-unknown-linux-gnu
+    - os: linux
+      env:
+        - CHANNEL=beta
+        - TARGET=x86_64-unknown-linux-gnu
+    - os: linux
+      env:
+        - CHANNEL=nightly
+        - TARGET=x86_64-unknown-linux-gnu
+install:
+  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $CHANNEL --default-host $TARGET -y
+  - export PATH=$HOME/.cargo/bin:$PATH
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
@@ -21,3 +42,4 @@ deploy:
     branch: master
     os: linux
     rust: nightly
+    env: RUST_TARGET=x86_64-unknown-linux-gnu
