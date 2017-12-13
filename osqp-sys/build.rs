@@ -34,19 +34,24 @@ fn main() {
         ),
     };
 
-    let dst = Config::new("osqp")
+    let out_dir = env::var("OUT_DIR").unwrap();
+
+    Config::new("osqp")
         .define("CTRLC", "OFF")
         .define("DFLOAT", "OFF")
         .define("DLONG", dlong_enabled)
         .define("PRINTING", "ON")
         .define("PROFILING", "ON")
         .define("UNITTESTS", "OFF")
+        // Ensure build outputs are always in OUT_DIR whichever generator CMake uses
+        .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY", &out_dir)
+        .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG", &out_dir)
+        .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE", &out_dir)
+        .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL", &out_dir)
+        .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO", &out_dir)
         .build_target("osqpstatic")
         .build();
 
-    println!(
-        "cargo:rustc-link-search=native={}",
-        dst.join("build").join("out").display()
-    );
+    println!("cargo:rustc-link-search=native={}", out_dir);
     println!("cargo:rustc-link-lib=static=osqpstatic");
 }
