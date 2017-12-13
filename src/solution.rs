@@ -8,7 +8,7 @@ pub struct Solution<'a> {
     pub(crate) ws: &'a Workspace,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Status {
     Solved,
     SolvedInaccurate,

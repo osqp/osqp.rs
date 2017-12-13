@@ -5,6 +5,7 @@ use std::slice;
 
 use float;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct CscMatrix<'a> {
     pub nrows: usize,
     pub ncols: usize,

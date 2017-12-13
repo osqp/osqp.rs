@@ -1,9 +1,10 @@
 use osqp_sys as ffi;
 use std::mem;
+use std::ptr;
 
 use {float, Workspace};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LinsysSolver {
     SuiteSparse,
     MklPardiso,
@@ -63,6 +64,16 @@ macro_rules! settings {
                     }
                 }
             )*
+        }
+
+        impl Clone for Settings {
+            fn clone(&self) -> Settings {
+                unsafe {
+                    Settings {
+                        inner: ptr::read(&self.inner)
+                    }
+                }
+            }
         }
 
         impl Default for Settings {
