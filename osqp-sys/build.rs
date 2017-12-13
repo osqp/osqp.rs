@@ -34,7 +34,6 @@ fn main() {
         ),
     };
 
-    // TODO: Figure out the story around cmake and cross-compilation
     let dst = Config::new("osqp")
         .define("CTRLC", "OFF")
         .define("DFLOAT", "OFF")
