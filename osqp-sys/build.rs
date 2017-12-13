@@ -2,6 +2,7 @@ extern crate cmake;
 use cmake::Config;
 
 use std::env;
+use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -10,6 +11,14 @@ fn main() {
         let _ = Command::new("git")
             .args(&["submodule", "update", "--init"])
             .status();
+    }
+
+    // cargo publish can't package symlinks so they are removed and replaced with a blank file
+    const OSQP_SOURCES_SYMLINK: &str = "osqp/interfaces/python/osqp_sources";
+    if fs::read_link(OSQP_SOURCES_SYMLINK).is_ok() {
+        fs::remove_file(OSQP_SOURCES_SYMLINK).expect("unable to delete osqp_sources symlink");
+        fs::File::create(OSQP_SOURCES_SYMLINK)
+            .expect("unable to create osqp_sources symlink replacement");
     }
 
     // Try to make c_int the same size as the target pointer width (i.e. 32 or 64 bits)
