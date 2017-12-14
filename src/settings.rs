@@ -120,6 +120,8 @@ settings! {
     Set the number of heuristic data scaling iterations.
 
     If `None` scaling is disabled.
+
+    Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
     scaling: option_u32,
 
@@ -130,6 +132,8 @@ settings! {
     Set the number of iterations between rho adaptations.
 
     If `None` it is automatic.
+
+    Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
     adaptive_rho_interval: option_u32,
 
@@ -144,7 +148,11 @@ settings! {
     #[doc = "Set the interval for adapting rho as a fraction of the setup time."]
     adaptive_rho_fraction: float,
 
-    #[doc = "Set the maximum number of ADMM iterations."]
+    #[doc = "
+    Set the maximum number of ADMM iterations.
+    
+    Panics on 32-bit platforms if the value is above `i32::max_value()`.
+    "]
     max_iter: u32 [update_max_iter, osqp_update_max_iter],
 
     #[doc = "Set the absolute convergence tolerance."]
@@ -171,7 +179,11 @@ settings! {
     #[doc = "Enable polishing the ADMM solution."]
     polish: bool [update_polish, osqp_update_polish],
 
-    #[doc = "Set the number of iterative refinement steps to use when polishing."]
+    #[doc = "
+    Set the number of iterative refinement steps to use when polishing.
+    
+    Panics on 32-bit platforms if the value is above `i32::max_value()`.
+    "]
     polish_refine_iter: u32 [update_polish_refine_iter, osqp_update_polish_refine_iter],
 
     #[doc = "Enable writing progress to stdout."]
@@ -184,9 +196,24 @@ settings! {
     Set the number of ADMM iterations between termination checks.
 
     If `None` termination checking is disabled.
+
+    Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
     check_termination: option_u32 [update_check_termination, osqp_update_check_termination],
 
     #[doc = "Enable warm starting the primal and dual variables from the previous solution."]
     warm_start: bool [update_warm_start, osqp_update_warm_start],
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(target_pointer_width = "32")]
+    #[test]
+    #[should_panic]
+    fn large_u32_settings_value_panics_on_32_bit() {
+        // Larger than i32::max_value()
+        Settings::default().polish_refine_iter(3_000_000_000);
+    }
 }
