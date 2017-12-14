@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() {
-    if !Path::new("osqp/.git").exists() {
+    if !Path::new("osqp/README.md").exists() {
         let _ = Command::new("git")
             .args(&["submodule", "update", "--init"])
             .status();
