@@ -5,12 +5,24 @@ use std::slice;
 
 use float;
 
+/// A matrix in Compressed Sparse Column format.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CscMatrix<'a> {
+    /// The number of rows in the matrix.
     pub nrows: usize,
+    /// The number of columns in the matrix.
     pub ncols: usize,
+    /// The CSC column pointer array.
+    ///
+    /// It contains the offsets into the index and data arrays of the entries in each column.
     pub indptr: Cow<'a, [usize]>,
+    /// The CSC index array.
+    ///
+    /// It contains the row index of each non-zero entry.
     pub indices: Cow<'a, [usize]>,
+    /// The CSC data array.
+    ///
+    /// It contains the values of each non-zero entry.
     pub data: Cow<'a, [float]>,
 }
 
