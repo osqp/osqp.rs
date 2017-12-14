@@ -29,8 +29,8 @@ install:
   - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $CHANNEL --default-host $TARGET -y
   - export PATH=$HOME/.cargo/bin:$PATH
 script:
-  - cargo build --verbose --all
   - cargo test --verbose --all
+  - cargo test --release --verbose --all
   - cargo doc --verbose --all --no-deps
 deploy:
   provider: pages
