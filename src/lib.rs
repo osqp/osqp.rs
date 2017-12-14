@@ -101,7 +101,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    /// Initialize the solver and validate the problem.
+    /// Initialises the solver and validates the problem.
     ///
     /// Panics if the problem is invalid.
     #[allow(non_snake_case)]
@@ -171,7 +171,7 @@ impl Workspace {
         }
     }
 
-    /// Update the linear part of the cost function `q`.
+    /// Sets the linear part of the cost function to `q`.
     pub fn update_lin_cost(&mut self, q: &[float]) {
         unsafe {
             assert_eq!(self.n, q.len());
@@ -182,7 +182,7 @@ impl Workspace {
         }
     }
 
-    /// Update the lower bounds `l` and upper bounds `u` of the constraints.
+    /// Sets the lower and upper bounds of the constraints to `l` and `u`.
     pub fn update_bounds(&mut self, l: &[float], u: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
@@ -195,7 +195,7 @@ impl Workspace {
         }
     }
 
-    /// Update the lower bound of the constraints `u`.
+    /// Sets the lower bound of the constraints to `l`.
     pub fn update_lower_bound(&mut self, l: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
@@ -206,7 +206,7 @@ impl Workspace {
         }
     }
 
-    /// Update the upper bound of the constraints `l`.
+    /// Sets the upper bound of the constraints to `u`.
     pub fn update_upper_bound(&mut self, u: &[float]) {
         unsafe {
             assert_eq!(self.m, u.len());
@@ -217,7 +217,7 @@ impl Workspace {
         }
     }
 
-    /// Warm start the primal variables `x` and the dual variables `y`.
+    /// Warm starts the primal variables at `x` and the dual variables at `y`.
     pub fn warm_start(&mut self, x: &[float], y: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
@@ -230,7 +230,7 @@ impl Workspace {
         }
     }
 
-    /// Warm start the primal variables `x`.
+    /// Warm starts the primal variables at `x`.
     pub fn warm_start_x(&mut self, x: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
@@ -238,7 +238,7 @@ impl Workspace {
         }
     }
 
-    /// Warm start the dual variables `y`.
+    /// Warms start the dual variables at `y`.
     pub fn warm_start_y(&mut self, y: &[float]) {
         unsafe {
             assert_eq!(self.m, y.len());
@@ -246,7 +246,7 @@ impl Workspace {
         }
     }
 
-    /// Update the elements of matrix `P` without changing its sparsity structure.
+    /// Updates the elements of matrix `P` without changing its sparsity structure.
     #[allow(non_snake_case)]
     pub fn update_P<'a, T: Into<CscMatrix<'a>>>(&mut self, P: T) {
         self.update_P_inner(P.into());
@@ -269,7 +269,7 @@ impl Workspace {
         }
     }
 
-    /// Update the elements of matrix `A` without changing its sparsity structure.
+    /// Updates the elements of matrix `A` without changing its sparsity structure.
     #[allow(non_snake_case)]
     pub fn update_A<'a, T: Into<CscMatrix<'a>>>(&mut self, A: T) {
         self.update_A_inner(A.into());
@@ -291,7 +291,7 @@ impl Workspace {
         }
     }
 
-    /// Update the elements of matrices `P` and `A` without changing either's sparsity structure.
+    /// Updates the elements of matrices `P` and `A` without changing either's sparsity structure.
     #[allow(non_snake_case)]
     pub fn update_P_A<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
         &mut self,
@@ -325,7 +325,7 @@ impl Workspace {
         }
     }
 
-    /// Copy the upper triangular elements of P to self.P_upper_tri_data
+    /// Copies the upper triangular elements of P to self.P_upper_tri_data
     #[allow(non_snake_case)]
     fn fill_P_upper_tri_data(&mut self, P: CscMatrix) {
         self.P_upper_tri_data.truncate(0);
@@ -343,7 +343,7 @@ impl Workspace {
         }
     }
 
-    /// Attempt to solve the quadratic program and returns the best solution.
+    /// Attempts to solve the quadratic program and returns the best solution.
     pub fn solve<'a>(&'a mut self) -> Solution<'a> {
         unsafe {
             check!(ffi::osqp_solve(self.inner));
