@@ -4,6 +4,7 @@ use std::ptr;
 
 use {float, Workspace};
 
+/// The linear system solver for OSQP to use.
 #[derive(Clone, Debug, PartialEq)]
 pub enum LinsysSolver {
     SuiteSparse,
@@ -50,6 +51,7 @@ macro_rules! settings {
     ($workspace:path, $(
         #[$doc:meta] $name:ident: $typ:ident $([$update_name:ident, $update_ffi:ident])*,
     )*) => (
+        /// The settings used when initialising a solver.
         pub struct Settings {
             pub(crate) inner: ffi::OSQPSettings,
         }
@@ -150,7 +152,7 @@ settings! {
 
     #[doc = "
     Sets the maximum number of ADMM iterations.
-    
+
     Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
     max_iter: u32 [update_max_iter, osqp_update_max_iter],
@@ -181,7 +183,7 @@ settings! {
 
     #[doc = "
     Sets the number of iterative refinement steps to use when polishing.
-    
+
     Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
     polish_refine_iter: u32 [update_polish_refine_iter, osqp_update_polish_refine_iter],

@@ -4,10 +4,12 @@ use std::time::Duration;
 
 use {float, Workspace};
 
+/// A solution returned by the solver.
 pub struct Solution<'a> {
     pub(crate) ws: &'a Workspace,
 }
 
+/// The reason for the solver returning a solution.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {
     Solved,

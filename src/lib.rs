@@ -89,6 +89,7 @@ macro_rules! check {
     };
 }
 
+/// An instance of the OSQP solver.
 #[allow(non_snake_case)]
 pub struct Workspace {
     inner: *mut ffi::OSQPWorkspace,
