@@ -90,6 +90,9 @@ macro_rules! settings {
             }
         }
 
+        unsafe impl Send for Settings {}
+        unsafe impl Sync for Settings {}
+
         impl $workspace {
             $($(
                 #[$doc]

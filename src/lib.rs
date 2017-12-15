@@ -361,6 +361,9 @@ impl Drop for Workspace {
     }
 }
 
+unsafe impl Send for Workspace {}
+unsafe impl Sync for Workspace {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
