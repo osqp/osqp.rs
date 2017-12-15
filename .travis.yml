@@ -1,4 +1,5 @@
 language: shell
+cache: cargo
 matrix:
   include:
     - os: linux
