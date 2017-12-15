@@ -31,6 +31,7 @@ install:
 script:
   - cargo test --verbose --all
   - cargo test --release --verbose --all
+before_deploy:
   - cargo doc --verbose --all --no-deps
 deploy:
   provider: pages
@@ -41,5 +42,6 @@ deploy:
   on:
     branch: master
     os: linux
-    rust: nightly
-    env: RUST_TARGET=x86_64-unknown-linux-gnu
+    env:
+      - CHANNEL=nightly
+      - TARGET=x86_64-unknown-linux-gnu
