@@ -2,7 +2,7 @@ use osqp_sys as ffi;
 use std::mem;
 use std::ptr;
 
-use {float, Workspace};
+use {float, Problem};
 
 /// The linear system solver for OSQP to use.
 #[derive(Clone, Debug, PartialEq)]
@@ -48,7 +48,7 @@ macro_rules! convert_rust_type {
 }
 
 macro_rules! settings {
-    ($workspace:path, $(
+    ($problem_ty:ty, $(
         #[$doc:meta] $name:ident: $typ:ident $([$update_name:ident, $update_ffi:ident])*,
     )*) => (
         /// The settings used when initialising a solver.
@@ -93,7 +93,7 @@ macro_rules! settings {
         unsafe impl Send for Settings {}
         unsafe impl Sync for Settings {}
 
-        impl $workspace {
+        impl $problem_ty {
             $($(
                 #[$doc]
                 pub fn $update_name(&mut self, value: rust_type!($typ)) {
@@ -113,7 +113,7 @@ macro_rules! settings {
 }
 
 settings! {
-    Workspace,
+    Problem,
 
     #[doc = "Sets the ADMM step rho."]
     rho: float [update_rho, osqp_update_rho],

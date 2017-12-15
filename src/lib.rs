@@ -28,7 +28,7 @@
 //! </div>
 //!
 //! ```rust
-//! use osqp::{Settings, Workspace};
+//! use osqp::{Settings, Problem};
 //!
 //! // Define problem data
 //! let P = &[[4.0, 1.0],
@@ -46,11 +46,11 @@
 //!     .verbose(false);
 //! # let settings = settings.adaptive_rho(false);
 //!
-//! // Create an OSQP workspace
-//! let mut workspace = Workspace::new(P, q, A, l, u, &settings);
+//! // Create an OSQP problem
+//! let mut prob = Problem::new(P, q, A, l, u, &settings);
 //!
 //! // Solve problem
-//! let solution = workspace.solve();
+//! let solution = prob.solve();
 //!
 //! // Print the solution
 //! println!("{:?}", solution.x());
@@ -91,7 +91,7 @@ macro_rules! check {
 
 /// An instance of the OSQP solver.
 #[allow(non_snake_case)]
-pub struct Workspace {
+pub struct Problem {
     inner: *mut ffi::OSQPWorkspace,
     /// Number of variables
     n: usize,
@@ -101,7 +101,7 @@ pub struct Workspace {
     P_upper_tri_data: Vec<float>,
 }
 
-impl Workspace {
+impl Problem {
     /// Initialises the solver and validates the problem.
     ///
     /// Panics if the problem is invalid.
@@ -113,9 +113,9 @@ impl Workspace {
         l: &[float],
         u: &[float],
         settings: &Settings,
-    ) -> Workspace {
-        // Function split to avoid monomorphising the main body of Workspace::new.
-        Workspace::new_inner(P.into(), q, A.into(), l, u, settings)
+    ) -> Problem {
+        // Function split to avoid monomorphising the main body of Problem::new.
+        Problem::new_inner(P.into(), q, A.into(), l, u, settings)
     }
 
     #[allow(non_snake_case)]
@@ -126,7 +126,7 @@ impl Workspace {
         l: &[float],
         u: &[float],
         settings: &Settings,
-    ) -> Workspace {
+    ) -> Problem {
         unsafe {
             // Ensure the provided data is valid. While OSQP internally performs some validity
             // checks it can be made to read outside the provided buffers so all the invariants
@@ -163,7 +163,7 @@ impl Workspace {
             let inner = ffi::osqp_setup(&data, settings);
             assert!(inner as usize != 0, "osqp setup failure");
 
-            Workspace {
+            Problem {
                 inner,
                 n,
                 m,
@@ -353,7 +353,7 @@ impl Workspace {
     }
 }
 
-impl Drop for Workspace {
+impl Drop for Problem {
     fn drop(&mut self) {
         unsafe {
             ffi::osqp_cleanup(self.inner);
@@ -361,8 +361,8 @@ impl Drop for Workspace {
     }
 }
 
-unsafe impl Send for Workspace {}
-unsafe impl Sync for Workspace {}
+unsafe impl Send for Problem {}
+unsafe impl Sync for Problem {}
 
 #[cfg(test)]
 mod tests {
@@ -386,9 +386,9 @@ mod tests {
         let settings = settings.adaptive_rho(false);
 
         // Check updating P and A together
-        let mut workspace = Workspace::new(P_wrong, q, A_wrong, l, u, &settings);
-        workspace.update_P_A(P, A);
-        let solution = workspace.solve();
+        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
+        prob.update_P_A(P, A);
+        let solution = prob.solve();
         let expected = &[0.2987710845986426, 0.701227995544065];
         assert_eq!(expected.len(), solution.x().len());
         assert!(
@@ -399,10 +399,10 @@ mod tests {
         );
 
         // Check updating P and A separately
-        let mut workspace = Workspace::new(P_wrong, q, A_wrong, l, u, &settings);
-        workspace.update_P(P);
-        workspace.update_A(A);
-        let solution = workspace.solve();
+        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
+        prob.update_P(P);
+        prob.update_A(A);
+        let solution = prob.solve();
         let expected = &[0.2987710845986426, 0.701227995544065];
         assert_eq!(expected.len(), solution.x().len());
         assert!(

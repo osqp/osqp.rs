@@ -2,11 +2,11 @@ use osqp_sys as ffi;
 use std::slice;
 use std::time::Duration;
 
-use {float, Workspace};
+use {float, Problem};
 
 /// A solution returned by the solver.
 pub struct Solution<'a> {
-    pub(crate) ws: &'a Workspace,
+    pub(crate) ws: &'a Problem,
 }
 
 /// The reason for the solver returning a solution.
