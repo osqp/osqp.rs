@@ -36,6 +36,16 @@ impl<'a> Solution<'a> {
         unsafe { slice::from_raw_parts((*(*self.ws.inner).solution).y, self.ws.m) }
     }
 
+    /// Returns the primal infeasibility certificate.
+    pub fn prim_inf_cert(&self) -> &'a [float] {
+        unsafe { slice::from_raw_parts((*self.ws.inner).delta_y, self.ws.m) }
+    }
+
+    /// Returns the dual infeasibility certificate.
+    pub fn dual_inf_cert(&self) -> &'a [float] {
+        unsafe { slice::from_raw_parts((*self.ws.inner).delta_x, self.ws.n) }
+    }
+
     /// Returns the number of iterations taken by the solver.
     pub fn iter(&self) -> u32 {
         unsafe {
