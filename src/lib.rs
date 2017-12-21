@@ -50,15 +50,16 @@
 //! let mut prob = Problem::new(P, q, A, l, u, &settings);
 //!
 //! // Solve problem
-//! let solution = prob.solve();
+//! let result = prob.solve();
 //!
 //! // Print the solution
-//! println!("{:?}", solution.x());
+//! println!("{:?}", result.x().expect("failed to solve problem"));
 //! #
 //! # // Check the solution
 //! # let expected = &[0.2987710845986426, 0.701227995544065];
-//! # assert_eq!(expected.len(), solution.x().len());
-//! # assert!(expected.iter().zip(solution.x()).all(|(&a, &b)| (a - b).abs() < 1e-9));
+//! # let x = result.solution().unwrap().x();
+//! # assert_eq!(expected.len(), x.len());
+//! # assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
 //! ```
 
 extern crate osqp_sys;
@@ -74,8 +75,8 @@ pub use csc::CscMatrix;
 mod settings;
 pub use settings::{LinsysSolver, Settings};
 
-mod solution;
-pub use solution::{Solution, Status};
+mod status;
+pub use status::{DualInfeasibilityCertificate, PrimalInfeasibilityCertificate, Solution, Status};
 
 #[allow(non_camel_case_types)]
 type float = f64;
@@ -345,10 +346,10 @@ impl Problem {
     }
 
     /// Attempts to solve the quadratic program and returns the best solution.
-    pub fn solve<'a>(&'a mut self) -> Solution<'a> {
+    pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
             check!(ffi::osqp_solve(self.inner));
-            Solution { ws: self }
+            Status::from_problem(self)
         }
     }
 }
@@ -388,28 +389,20 @@ mod tests {
         // Check updating P and A together
         let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
         prob.update_P_A(P, A);
-        let solution = prob.solve();
+        let result = prob.solve();
+        let x = result.solution().unwrap().x();
         let expected = &[0.2987710845986426, 0.701227995544065];
-        assert_eq!(expected.len(), solution.x().len());
-        assert!(
-            expected
-                .iter()
-                .zip(solution.x())
-                .all(|(&a, &b)| (a - b).abs() < 1e-9)
-        );
+        assert_eq!(expected.len(), x.len());
+        assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
 
         // Check updating P and A separately
         let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
         prob.update_P(P);
         prob.update_A(A);
-        let solution = prob.solve();
+        let result = prob.solve();
+        let x = result.solution().unwrap().x();
         let expected = &[0.2987710845986426, 0.701227995544065];
-        assert_eq!(expected.len(), solution.x().len());
-        assert!(
-            expected
-                .iter()
-                .zip(solution.x())
-                .all(|(&a, &b)| (a - b).abs() < 1e-9)
-        );
+        assert_eq!(expected.len(), x.len());
+        assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
     }
 }
