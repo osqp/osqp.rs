@@ -61,12 +61,12 @@ impl<'a> Status<'a> {
         }
     }
 
-    /// Returns the primal variables at the solution if the problem was solved.
+    /// Returns the primal variables at the solution if the problem is `Solved`.
     pub fn x(&self) -> Option<&'a [float]> {
         self.solution().map(|s| s.x())
     }
 
-    /// Returns the solution if the problem was solved.
+    /// Returns the solution if the problem is `Solved`.
     pub fn solution(&self) -> Option<Solution<'a>> {
         match *self {
             Status::Solved(ref solution) => Some(solution.clone()),
