@@ -2,7 +2,7 @@ use osqp_sys as ffi;
 use std::slice;
 use std::time::Duration;
 
-use {float, Problem};
+use {float, secs_to_duration, Problem};
 
 /// The result of solving a problem.
 #[derive(Clone)]
@@ -82,11 +82,6 @@ impl<'a> Status<'a> {
         }
     }
 
-    /// Returns the time taken for the setup phase.
-    pub fn setup_time(&self) -> Duration {
-        unsafe { secs_to_duration((*(*self.prob().inner).info).setup_time) }
-    }
-
     /// Returns the time taken for the solve phase.
     pub fn solve_time(&self) -> Duration {
         unsafe { secs_to_duration((*(*self.prob().inner).info).solve_time) }
@@ -98,6 +93,8 @@ impl<'a> Status<'a> {
     }
 
     /// Returns the total time taken by the solver.
+    /// 
+    /// This includes the time taken for the setup phase on the first solve.
     pub fn run_time(&self) -> Duration {
         unsafe { secs_to_duration((*(*self.prob().inner).info).run_time) }
     }
@@ -172,10 +169,4 @@ impl<'a> DualInfeasibilityCertificate<'a> {
     pub fn cert(&self) -> &'a [float] {
         unsafe { slice::from_raw_parts((*self.prob.inner).delta_x, self.prob.n) }
     }
-}
-
-fn secs_to_duration(secs: float) -> Duration {
-    let whole_secs = secs.floor() as u64;
-    let nanos = (secs.fract() * 1e9) as u32;
-    Duration::new(whole_secs, nanos)
 }

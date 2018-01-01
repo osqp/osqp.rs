@@ -68,6 +68,7 @@ extern crate static_assertions;
 
 use osqp_sys as ffi;
 use std::ptr::null_mut;
+use std::time::Duration;
 
 mod csc;
 pub use csc::CscMatrix;
@@ -171,6 +172,11 @@ impl Problem {
                 P_upper_tri_data: Vec::with_capacity((P.data.len() + n + 1) / 2),
             }
         }
+    }
+
+    /// Returns the time taken for the setup phase.
+    pub fn setup_time(&self) -> Duration {
+        unsafe { secs_to_duration((*(*self.inner).info).setup_time) }
     }
 
     /// Sets the linear part of the cost function to `q`.
@@ -364,6 +370,12 @@ impl Drop for Problem {
 
 unsafe impl Send for Problem {}
 unsafe impl Sync for Problem {}
+
+fn secs_to_duration(secs: float) -> Duration {
+    let whole_secs = secs.floor() as u64;
+    let nanos = (secs.fract() * 1e9) as u32;
+    Duration::new(whole_secs, nanos)
+}
 
 #[cfg(test)]
 mod tests {
