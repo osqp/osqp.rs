@@ -333,7 +333,7 @@ impl Problem {
         }
     }
 
-    /// Copies the upper triangular elements of P to self.P_upper_tri_data
+    /// Copies the upper triangular elements of P to self.P_upper_tri_data.
     #[allow(non_snake_case)]
     fn fill_P_upper_tri_data(&mut self, P: CscMatrix) {
         self.P_upper_tri_data.truncate(0);
@@ -351,7 +351,7 @@ impl Problem {
         }
     }
 
-    /// Attempts to solve the quadratic program and returns the best solution.
+    /// Attempts to solve the quadratic program.
     pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
             check!(ffi::osqp_solve(self.inner));
