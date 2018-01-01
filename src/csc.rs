@@ -89,9 +89,8 @@ impl<'a> CscMatrix<'a> {
                             .iter()
                             .chain(once(&(self.nrows + 1)))
                     )
-                    .take_while(|&(&row_num, &other_row_num)| {
-                        row_num <= col_num || other_row_num <= col_num
-                    })
+                    .take_while(|&(&row_num, &other_row_num)| row_num <= col_num
+                        || other_row_num <= col_num)
                     .all(|(&row_num, &other_row_num)| row_num == other_row_num)
             );
             col_start_idx = col_end_idx;
