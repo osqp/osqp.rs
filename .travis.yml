@@ -43,6 +43,4 @@ deploy:
   on:
     branch: master
     os: linux
-    env:
-      - CHANNEL=nightly
-      - TARGET=x86_64-unknown-linux-gnu
+    condition: "$CHANNEL = nightly"
