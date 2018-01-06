@@ -93,7 +93,7 @@ impl<'a> Status<'a> {
     }
 
     /// Returns the total time taken by the solver.
-    /// 
+    ///
     /// This includes the time taken for the setup phase on the first solve.
     pub fn run_time(&self) -> Duration {
         unsafe { secs_to_duration((*(*self.prob().inner).info).run_time) }
@@ -158,15 +158,23 @@ impl<'a> Solution<'a> {
 }
 
 impl<'a> PrimalInfeasibilityCertificate<'a> {
-    /// Returns the primal infeasibility certificate.
-    pub fn cert(&self) -> &'a [float] {
+    /// Returns the certificate of primal infeasibility.
+    ///
+    /// For further explanation see [Infeasibility detection in the alternating direction method of
+    /// multipliers for convex optimization]
+    /// (http://www.optimization-online.org/DB_HTML/2017/06/6058.html).
+    pub fn delta_y(&self) -> &'a [float] {
         unsafe { slice::from_raw_parts((*self.prob.inner).delta_y, self.prob.m) }
     }
 }
 
 impl<'a> DualInfeasibilityCertificate<'a> {
-    /// Returns the dual infeasibility certificate.
-    pub fn cert(&self) -> &'a [float] {
+    /// Returns the certificate of dual infeasibility.
+    ///
+    /// For further explanation see [Infeasibility detection in the alternating direction method of
+    /// multipliers for convex optimization]
+    /// (http://www.optimization-online.org/DB_HTML/2017/06/6058.html).
+    pub fn delta_x(&self) -> &'a [float] {
         unsafe { slice::from_raw_parts((*self.prob.inner).delta_x, self.prob.n) }
     }
 }
