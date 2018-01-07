@@ -36,6 +36,16 @@ pub struct DualInfeasibilityCertificate<'a> {
     prob: &'a Problem,
 }
 
+/// The status of the polish operation.
+#[derive(Copy, Clone, Hash, PartialEq)]
+pub enum PolishStatus {
+    Successful,
+    Unsuccessful,
+    Unperformed,
+    // Prevent exhaustive enum matching
+    #[doc(hidden)] __Nonexhaustive,
+}
+
 impl<'a> Status<'a> {
     pub(crate) fn from_problem(prob: &'a Problem) -> Status<'a> {
         use std::os::raw::c_int;
@@ -139,6 +149,18 @@ impl<'a> Solution<'a> {
     /// These are the Lagrange multipliers of the constraints `l <= Ax <= u`.
     pub fn y(&self) -> &'a [float] {
         unsafe { slice::from_raw_parts((*(*self.prob.inner).solution).y, self.prob.m) }
+    }
+
+    /// Returns the status of the polish operation.
+    pub fn polish_status(&self) -> PolishStatus {
+        unsafe {
+            match (*(*self.prob.inner).info).status_polish {
+                1 => PolishStatus::Successful,
+                -1 => PolishStatus::Unsuccessful,
+                0 => PolishStatus::Unperformed,
+                _ => unreachable!(),
+            }
+        }
     }
 
     /// Returns the primal objective value.
