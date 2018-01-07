@@ -1,11 +1,12 @@
 use osqp_sys as ffi;
+use std::fmt;
 use std::slice;
 use std::time::Duration;
 
 use {float, secs_to_duration, Problem};
 
 /// The result of solving a problem.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Status<'a> {
     Solved(Solution<'a>),
     SolvedInaccurate(Solution<'a>),
@@ -37,7 +38,7 @@ pub struct DualInfeasibilityCertificate<'a> {
 }
 
 /// The status of the polish operation.
-#[derive(Copy, Clone, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq)]
 pub enum PolishStatus {
     Successful,
     Unsuccessful,
@@ -179,6 +180,19 @@ impl<'a> Solution<'a> {
     }
 }
 
+impl<'a> fmt::Debug for Solution<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Solution")
+            .field("x", &self.x())
+            .field("y", &self.y())
+            .field("polish_status", &self.polish_status())
+            .field("obj_val", &self.obj_val())
+            .field("pri_res", &self.pri_res())
+            .field("dua_res", &self.dua_res())
+            .finish()
+    }
+}
+
 impl<'a> PrimalInfeasibilityCertificate<'a> {
     /// Returns the certificate of primal infeasibility.
     ///
@@ -190,6 +204,14 @@ impl<'a> PrimalInfeasibilityCertificate<'a> {
     }
 }
 
+impl<'a> fmt::Debug for PrimalInfeasibilityCertificate<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("PrimalInfeasibilityCertificate")
+            .field("delta_y", &self.delta_y())
+            .finish()
+    }
+}
+
 impl<'a> DualInfeasibilityCertificate<'a> {
     /// Returns the certificate of dual infeasibility.
     ///
@@ -198,5 +220,13 @@ impl<'a> DualInfeasibilityCertificate<'a> {
     /// (http://www.optimization-online.org/DB_HTML/2017/06/6058.html).
     pub fn delta_x(&self) -> &'a [float] {
         unsafe { slice::from_raw_parts((*self.prob.inner).delta_x, self.prob.n) }
+    }
+}
+
+impl<'a> fmt::Debug for DualInfeasibilityCertificate<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("DualInfeasibilityCertificate")
+            .field("delta_x", &self.delta_x())
+            .finish()
     }
 }
