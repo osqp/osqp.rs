@@ -8,11 +8,6 @@ environment:
     - TARGET: i686-pc-windows-gnu
       CHANNEL: 1.20.0
       MINGW_ROOT: C:\msys64\mingw32
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: 1.20.0
-    - TARGET: x86_64-pc-windows-gnu
-      CHANNEL: 1.20.0
-      MINGW_ROOT: C:\msys64\mingw64
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: 1.20.0
     # Stable channel
@@ -27,25 +22,15 @@ environment:
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: stable
     # Beta channel
-    - TARGET: i686-pc-windows-gnu
-      CHANNEL: beta
-      MINGW_ROOT: C:\msys64\mingw32
     - TARGET: i686-pc-windows-msvc
       CHANNEL: beta
     - TARGET: x86_64-pc-windows-gnu
       CHANNEL: beta
       MINGW_ROOT: C:\msys64\mingw64
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: beta
     # Nightly channel
     - TARGET: i686-pc-windows-gnu
       CHANNEL: nightly
       MINGW_ROOT: C:\msys64\mingw32
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: nightly
-    - TARGET: x86_64-pc-windows-gnu
-      CHANNEL: nightly
-      MINGW_ROOT: C:\msys64\mingw64
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: nightly
 install:
