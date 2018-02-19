@@ -3,7 +3,7 @@ use std::fmt;
 use std::slice;
 use std::time::Duration;
 
-use {float, secs_to_duration, Problem};
+use {float, Problem};
 
 /// The result of solving a problem.
 #[derive(Clone, Debug)]
@@ -91,6 +91,11 @@ impl<'a> Status<'a> {
             // cast safe as more than 2 billion iterations would be unreasonable
             (*(*self.prob().inner).info).iter as u32
         }
+    }
+
+    /// Returns the time taken for the setup phase.
+    pub fn setup_time(&self) -> Duration {
+        unsafe { secs_to_duration((*(*self.prob().inner).info).setup_time) }
     }
 
     /// Returns the time taken for the solve phase.
@@ -229,4 +234,10 @@ impl<'a> fmt::Debug for DualInfeasibilityCertificate<'a> {
             .field("delta_x", &self.delta_x())
             .finish()
     }
+}
+
+fn secs_to_duration(secs: float) -> Duration {
+    let whole_secs = secs.floor() as u64;
+    let nanos = (secs.fract() * 1e9) as u32;
+    Duration::new(whole_secs, nanos)
 }
