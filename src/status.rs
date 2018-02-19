@@ -16,7 +16,8 @@ pub enum Status<'a> {
     DualInfeasible(DualInfeasibilityCertificate<'a>),
     DualInfeasibleInaccurate(DualInfeasibilityCertificate<'a>),
     // Prevent exhaustive enum matching
-    #[doc(hidden)] __Nonexhaustive,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 /// A solution to a problem.
@@ -44,7 +45,8 @@ pub enum PolishStatus {
     Unsuccessful,
     Unperformed,
     // Prevent exhaustive enum matching
-    #[doc(hidden)] __Nonexhaustive,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl<'a> Status<'a> {

@@ -10,7 +10,8 @@ pub enum LinsysSolver {
     SuiteSparse,
     MklPardiso,
     // Prevent exhaustive enum matching
-    #[doc(hidden)] __Nonexhaustive,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 macro_rules! u32_to_osqp_int {
