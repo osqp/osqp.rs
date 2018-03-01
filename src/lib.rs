@@ -63,8 +63,6 @@
 //! ```
 
 extern crate osqp_sys;
-#[macro_use]
-extern crate static_assertions;
 
 use osqp_sys as ffi;
 use std::ptr::null_mut;
@@ -83,7 +81,10 @@ pub use status::{DualInfeasibilityCertificate, PolishStatus, PrimalInfeasibility
 type float = f64;
 
 // Ensure osqp_int is the same size as usize/isize.
-assert_eq_size!(osqp_int_size; usize, ffi::osqp_int);
+#[allow(dead_code)]
+fn assert_osqp_int_size() {
+    let _osqp_int_must_be_usize = ::std::mem::transmute::<ffi::osqp_int, usize>;
+}
 
 macro_rules! check {
     ($ret:expr) => {

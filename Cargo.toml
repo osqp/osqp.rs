@@ -14,4 +14,3 @@ keywords = ["optimisation", "optimization", "solver", "quadratic", "linear"]
 
 [dependencies]
 osqp-sys = { version = "0.2.1-pre.3", path = "osqp-sys" }
-static_assertions = "0.2.3"
