@@ -87,7 +87,7 @@ mod tests {
 
         // Define solver settings
         let mut settings: OSQPSettings = mem::zeroed();
-        set_default_settings(&mut settings);
+        osqp_set_default_settings(&mut settings);
         settings.alpha = 1.0;
         settings.adaptive_rho = 0;
         let settings = &mut settings as *mut OSQPSettings;

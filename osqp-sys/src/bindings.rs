@@ -4,6 +4,7 @@ use {c_float, c_int, OSQPTimer};
 
 pub const SUITESPARSE_LDL_SOLVER: linsys_solver_type = 0;
 pub const MKL_PARDISO_SOLVER: linsys_solver_type = 1;
+/// Linear System Solvers *
 pub type linsys_solver_type = ::std::os::raw::c_uint;
 /// Matrix in compressed-column or triplet form
 #[repr(C)]
@@ -14,7 +15,7 @@ pub struct csc {
     pub m: c_int,
     /// < number of columns
     pub n: c_int,
-    /// < column pointers (size n+1) (col indices (size nzmax) start from 0 when using triplet format (direct KKT matrix formation))
+    /// < column pointers (size n+1) (col indices (size nzmax)
     pub p: *mut c_int,
     /// < row indices, size nzmax starting from 0
     pub i: *mut c_int,
@@ -58,7 +59,7 @@ pub struct OSQPInfo {
     pub status: [::std::os::raw::c_char; 32usize],
     /// < status as c_int, defined in constants.h
     pub status_val: c_int,
-    /// < polish status: successful (1), unperformed (0), (-1) unsuccessful
+    /// < polish status: successful (1), unperformed (0), (-1)
     pub status_polish: c_int,
     /// < primal objective
     pub obj_val: c_float,
@@ -113,13 +114,13 @@ pub struct OSQPPolish {
 /// Data structure
 #[repr(C)]
 pub struct OSQPData {
-    /// < number of variables n,
+    /// < number of variables n
     pub n: c_int,
     /// < number of constraints m
     pub m: c_int,
-    /// < P: in csc format (size n x n). The workspace version stores only the upper triangular part. P->nzmax is the number of nonzero elements of the full P.
+    /// < quadratic part of the cost P in csc format (size n x n). It
     pub P: *mut csc,
-    /// < A: in csc format (size m x n)
+    /// < linear constraints matrix A in csc format (size m x n)
     pub A: *mut csc,
     /// < dense array for linear part of cost function (size n)
     pub q: *mut c_float,
@@ -135,15 +136,15 @@ pub struct OSQPSettings {
     pub rho: c_float,
     /// < ADMM step sigma
     pub sigma: c_float,
-    /// < heuristic data scaling iterations. If 0, scaling disabled
+    /// < heuristic data scaling iterations. If 0,
     pub scaling: c_int,
     /// < boolean, is rho step size adaptive?
     pub adaptive_rho: c_int,
-    /// < Number of iterations between rho adaptations rho. If 0, it is automatic
+    /// < Number of iterations between rho
     pub adaptive_rho_interval: c_int,
-    /// < Tolerance X for adapting rho. The new rho has to be X times larger or 1/X times smaller than the current one to trigger a new factorization.
+    /// < Tolerance X for adapting rho. The new rho
     pub adaptive_rho_tolerance: c_float,
-    /// < Interval for adapting rho (fraction of the setup time)
+    /// < Interval for adapting rho (fraction of
     pub adaptive_rho_fraction: c_float,
     /// < maximum iterations
     pub max_iter: c_int,
@@ -159,20 +160,22 @@ pub struct OSQPSettings {
     pub alpha: c_float,
     /// < linear system solver to use
     pub linsys_solver: linsys_solver_type,
-    /// < regularization parameter for polish
+    /// < regularization parameter for
     pub delta: c_float,
     /// < boolean, polish ADMM solution
     pub polish: c_int,
-    /// < iterative refinement steps in polish
+    /// < iterative refinement steps in
     pub polish_refine_iter: c_int,
     /// < boolean, write out progres
     pub verbose: c_int,
-    /// < boolean, use scaled termination criteria
+    /// < boolean, use scaled termination
     pub scaled_termination: c_int,
-    /// < integer, check termination interval. If 0, termination checking is disabled
+    /// < integer, check termination
     pub check_termination: c_int,
     /// < boolean, warm start
     pub warm_start: c_int,
+    /// < maximum seconds allowed to solve
+    pub time_limit: c_float,
 }
 /// OSQP Workspace
 #[repr(C)]
@@ -187,7 +190,7 @@ pub struct OSQPWorkspace {
     pub rho_vec: *mut c_float,
     /// < vector of inv rho values
     pub rho_inv_vec: *mut c_float,
-    /// < Type of constraints: loose (-1), equality (1), inequality (0)
+    /// < Type of constraints: loose (-1), equality (1),
     pub constr_type: *mut c_int,
     /// < Iterate x
     pub x: *mut c_float,
@@ -198,10 +201,8 @@ pub struct OSQPWorkspace {
     /// < Iterate xz_tilde
     pub xz_tilde: *mut c_float,
     /// < Previous x
-    /// /**< NB: Used also as workspace vector for dual residual */
     pub x_prev: *mut c_float,
     /// < Previous z
-    /// /**< NB: Used also as workspace vector for primal residual */
     pub z_prev: *mut c_float,
     /// < Scaled A * x
     pub Ax: *mut c_float,
@@ -221,9 +222,9 @@ pub struct OSQPWorkspace {
     pub Adelta_x: *mut c_float,
     /// < temporary primal variable scaling vectors
     pub D_temp: *mut c_float,
-    /// < temporary primal variable scaling vectors storing norms of A columns
+    /// < temporary primal variable scaling vectors storing
     pub D_temp_A: *mut c_float,
-    /// < temporary constraints scaling vectors storing norms of A' columns
+    /// < temporary constraints scaling vectors storing norms of
     pub E_temp: *mut c_float,
     /// < Problem settings
     pub settings: *mut OSQPSettings,
@@ -248,7 +249,6 @@ pub struct OSQPWorkspace {
 pub struct linsys_solver {
     /// < Linear system solver type (see type.h)
     pub type_: linsys_solver_type,
-    /// < Solve linear system
     pub solve: ::std::option::Option<
         unsafe extern "C" fn(
             self_: *mut LinSysSolver,
@@ -256,9 +256,8 @@ pub struct linsys_solver {
             settings: *const OSQPSettings,
         ) -> c_int,
     >,
-    /// < Free linear system solver (only in desktop version)
+    /// < Free linear system solver
     pub free: ::std::option::Option<unsafe extern "C" fn(self_: *mut LinSysSolver)>,
-    /// < Update matrices P and A in the solver
     pub update_matrices: ::std::option::Option<
         unsafe extern "C" fn(
             self_: *mut LinSysSolver,
@@ -267,7 +266,6 @@ pub struct linsys_solver {
             settings: *const OSQPSettings,
         ) -> c_int,
     >,
-    /// < Update rho
     pub update_rho_vec: ::std::option::Option<
         unsafe extern "C" fn(s: *mut LinSysSolver, rho_vec: *const c_float, m: c_int) -> c_int,
     >,
@@ -275,14 +273,12 @@ pub struct linsys_solver {
     pub nthreads: c_int,
 }
 extern "C" {
-
     /// Set default settings from constants.h file
     /// assumes settings already allocated in memory
     /// @param settings settings structure
-    pub fn set_default_settings(settings: *mut OSQPSettings);
+    pub fn osqp_set_default_settings(settings: *mut OSQPSettings);
 }
 extern "C" {
-
     /// Initialize OSQP solver allocating memory.
     ///
     /// All the inputs must be already allocated in memory before calling.
@@ -295,7 +291,8 @@ extern "C" {
     /// - direct solver: KKT matrix factorization is performed here
     /// - indirect solver: KKT matrix preconditioning is performed here
     ///
-    /// NB: This is the only function that allocates dynamic memory and is not used during code generation
+    /// NB: This is the only function that allocates dynamic memory and is not used
+    /// during code generation
     ///
     /// @param  data         Problem data
     /// @param  settings     Solver settings
@@ -303,7 +300,6 @@ extern "C" {
     pub fn osqp_setup(data: *const OSQPData, settings: *mut OSQPSettings) -> *mut OSQPWorkspace;
 }
 extern "C" {
-
     /// Solve quadratic program
     ///
     /// The final solver information is stored in the \a work->info  structure
@@ -321,7 +317,6 @@ extern "C" {
     pub fn osqp_solve(work: *mut OSQPWorkspace) -> c_int;
 }
 extern "C" {
-
     /// Cleanup workspace by deallocating memory
     ///
     /// This function is not used in code generation
@@ -330,7 +325,6 @@ extern "C" {
     pub fn osqp_cleanup(work: *mut OSQPWorkspace) -> c_int;
 }
 extern "C" {
-
     /// Update linear cost in the problem
     /// @param  work  Workspace
     /// @param  q_new New linear cost
@@ -338,7 +332,6 @@ extern "C" {
     pub fn osqp_update_lin_cost(work: *mut OSQPWorkspace, q_new: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Update lower and upper bounds in the problem constraints
     /// @param  work   Workspace
     /// @param  l_new New lower bound
@@ -351,7 +344,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update lower bound in the problem constraints
     /// @param  work   Workspace
     /// @param  l_new New lower bound
@@ -359,7 +351,6 @@ extern "C" {
     pub fn osqp_update_lower_bound(work: *mut OSQPWorkspace, l_new: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Update upper bound in the problem constraints
     /// @param  work   Workspace
     /// @param  u_new New upper bound
@@ -367,7 +358,6 @@ extern "C" {
     pub fn osqp_update_upper_bound(work: *mut OSQPWorkspace, u_new: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Warm start primal and dual variables
     /// @param  work Workspace structure
     /// @param  x    Primal variable
@@ -376,7 +366,6 @@ extern "C" {
     pub fn osqp_warm_start(work: *mut OSQPWorkspace, x: *mut c_float, y: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Warm start primal variable
     /// @param  work Workspace structure
     /// @param  x    Primal variable
@@ -384,7 +373,6 @@ extern "C" {
     pub fn osqp_warm_start_x(work: *mut OSQPWorkspace, x: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Warm start dual variable
     /// @param  work Workspace structure
     /// @param  y    Dual variable
@@ -392,7 +380,6 @@ extern "C" {
     pub fn osqp_warm_start_y(work: *mut OSQPWorkspace, y: *mut c_float) -> c_int;
 }
 extern "C" {
-
     /// Update elements of matrix P (upper-diagonal)
     /// without changing sparsity structure.
     ///
@@ -415,7 +402,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update elements of matrix A without changing sparsity structure.
     ///
     ///
@@ -437,7 +423,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update elements of matrix P (upper-diagonal) and elements of matrix A
     /// without changing sparsity structure.
     ///
@@ -470,7 +455,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update rho. Limit it between RHO_MIN and RHO_MAX.
     /// @param  work         Workspace
     /// @param  rho_new      New rho setting
@@ -478,7 +462,6 @@ extern "C" {
     pub fn osqp_update_rho(work: *mut OSQPWorkspace, rho_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update max_iter setting
     /// @param  work         Workspace
     /// @param  max_iter_new New max_iter setting
@@ -486,7 +469,6 @@ extern "C" {
     pub fn osqp_update_max_iter(work: *mut OSQPWorkspace, max_iter_new: c_int) -> c_int;
 }
 extern "C" {
-
     /// Update absolute tolernace value
     /// @param  work        Workspace
     /// @param  eps_abs_new New absolute tolerance value
@@ -494,7 +476,6 @@ extern "C" {
     pub fn osqp_update_eps_abs(work: *mut OSQPWorkspace, eps_abs_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update relative tolernace value
     /// @param  work        Workspace
     /// @param  eps_rel_new New relative tolerance value
@@ -502,7 +483,6 @@ extern "C" {
     pub fn osqp_update_eps_rel(work: *mut OSQPWorkspace, eps_rel_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update primal infeasibility tolerance
     /// @param  work          Workspace
     /// @param  eps_prim_inf_new  New primal infeasibility tolerance
@@ -510,7 +490,6 @@ extern "C" {
     pub fn osqp_update_eps_prim_inf(work: *mut OSQPWorkspace, eps_prim_inf_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update dual infeasibility tolerance
     /// @param  work          Workspace
     /// @param  eps_dual_inf_new  New dual infeasibility tolerance
@@ -518,7 +497,6 @@ extern "C" {
     pub fn osqp_update_eps_dual_inf(work: *mut OSQPWorkspace, eps_dual_inf_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update relaxation parameter alpha
     /// @param  work  Workspace
     /// @param  alpha_new New relaxation parameter value
@@ -526,7 +504,6 @@ extern "C" {
     pub fn osqp_update_alpha(work: *mut OSQPWorkspace, alpha_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update warm_start setting
     /// @param  work           Workspace
     /// @param  warm_start_new New warm_start setting
@@ -534,7 +511,6 @@ extern "C" {
     pub fn osqp_update_warm_start(work: *mut OSQPWorkspace, warm_start_new: c_int) -> c_int;
 }
 extern "C" {
-
     /// Update scaled_termination setting
     /// @param  work                 Workspace
     /// @param  scaled_termination_new  New scaled_termination setting
@@ -545,7 +521,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update check_termination setting
     /// @param  work                   Workspace
     /// @param  check_termination_new  New check_termination setting
@@ -556,7 +531,6 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update regularization parameter in polish
     /// @param  work      Workspace
     /// @param  delta_new New regularization parameter
@@ -564,7 +538,6 @@ extern "C" {
     pub fn osqp_update_delta(work: *mut OSQPWorkspace, delta_new: c_float) -> c_int;
 }
 extern "C" {
-
     /// Update polish setting
     /// @param  work          Workspace
     /// @param  polish_new New polish setting
@@ -572,7 +545,6 @@ extern "C" {
     pub fn osqp_update_polish(work: *mut OSQPWorkspace, polish_new: c_int) -> c_int;
 }
 extern "C" {
-
     /// Update number of iterative refinement steps in polish
     /// @param  work                Workspace
     /// @param  polish_refine_iter_new New iterative reginement steps
@@ -583,12 +555,18 @@ extern "C" {
     ) -> c_int;
 }
 extern "C" {
-
     /// Update verbose setting
     /// @param  work        Workspace
     /// @param  verbose_new New verbose setting
     /// @return             Exitflag
     pub fn osqp_update_verbose(work: *mut OSQPWorkspace, verbose_new: c_int) -> c_int;
+}
+extern "C" {
+    /// Update time_limit setting
+    /// @param  work            Workspace
+    /// @param  time_limit_new  New time_limit setting
+    /// @return                 Exitflag
+    pub fn osqp_update_time_limit(work: *mut OSQPWorkspace, time_limit_new: c_float) -> c_int;
 }
 pub const OSQP_DUAL_INFEASIBLE_INACCURATE: ffi_osqp_status = 4;
 pub const OSQP_PRIMAL_INFEASIBLE_INACCURATE: ffi_osqp_status = 3;
@@ -598,5 +576,6 @@ pub const OSQP_MAX_ITER_REACHED: ffi_osqp_status = -2;
 pub const OSQP_PRIMAL_INFEASIBLE: ffi_osqp_status = -3;
 pub const OSQP_DUAL_INFEASIBLE: ffi_osqp_status = -4;
 pub const OSQP_SIGINT: ffi_osqp_status = -5;
+pub const OSQP_TIME_LIMIT_REACHED: ffi_osqp_status = -6;
 pub const OSQP_UNSOLVED: ffi_osqp_status = -10;
 pub type ffi_osqp_status = ::std::os::raw::c_int;

@@ -45,4 +45,5 @@ bindgen bindings.h -o src/bindings.rs \
 --whitelist-function osqp_update_polish \
 --whitelist-function osqp_update_polish_refine_iter \
 --whitelist-function osqp_update_verbose \
---whitelist-function set_default_settings \
+--whitelist-function osqp_update_time_limit \
+--whitelist-function osqp_set_default_settings \

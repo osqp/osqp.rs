@@ -1,6 +1,7 @@
 use osqp_sys as ffi;
 use std::mem;
 use std::ptr;
+use std::time::Duration;
 
 use {float, Problem};
 
@@ -32,6 +33,7 @@ macro_rules! rust_type {
     (option_u32) => (Option<u32>);
     (bool) => (bool);
     (linsys_solver) => (LinsysSolver);
+    (duration) => (Duration);
 }
 
 macro_rules! convert_rust_type {
@@ -46,6 +48,7 @@ macro_rules! convert_rust_type {
             LinsysSolver::__Nonexhaustive => unreachable!(),
         }
     );
+    ($name:ident, duration, $value:expr) => (duration_to_secs($value));
 }
 
 macro_rules! settings {
@@ -83,7 +86,7 @@ macro_rules! settings {
             fn default() -> Settings {
                 unsafe {
                     let mut settings: ffi::OSQPSettings = mem::zeroed();
-                    ffi::set_default_settings(&mut settings);
+                    ffi::osqp_set_default_settings(&mut settings);
                     Settings {
                         inner: settings
                     }
@@ -209,6 +212,13 @@ settings! {
 
     #[doc = "Enables warm starting the primal and dual variables from the previous solution."]
     warm_start: bool [update_warm_start, osqp_update_warm_start],
+
+    #[doc = "Sets the solve time limit."]
+    time_limit: duration [update_time_limit, osqp_update_time_limit],
+}
+
+fn duration_to_secs(dur: Duration) -> float {
+    dur.as_secs() as float + dur.subsec_nanos() as float * 1e-9
 }
 
 #[cfg(test)]
@@ -221,5 +231,12 @@ mod tests {
     fn large_u32_settings_value_panics_on_32_bit() {
         // Larger than i32::max_value()
         Settings::default().polish_refine_iter(3_000_000_000);
+    }
+
+    #[test]
+    fn duration_to_secs_examples() {
+        assert_eq!(duration_to_secs(Duration::new(2, 0)), 2.0);
+        assert_eq!(duration_to_secs(Duration::new(8, 100_000_000)), 8.1);
+        assert_eq!(duration_to_secs(Duration::new(0, 10_000_000)), 0.01);
     }
 }
