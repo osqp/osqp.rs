@@ -33,7 +33,7 @@ macro_rules! rust_type {
     (option_u32) => (Option<u32>);
     (bool) => (bool);
     (linsys_solver) => (LinsysSolver);
-    (duration) => (Duration);
+    (option_duration) => (Option<Duration>);
 }
 
 macro_rules! convert_rust_type {
@@ -48,7 +48,17 @@ macro_rules! convert_rust_type {
             LinsysSolver::__Nonexhaustive => unreachable!(),
         }
     );
-    ($name:ident, duration, $value:expr) => (duration_to_secs($value));
+    ($name:ident, option_duration, $value:expr) => (
+        $value.map(|v| {
+            let mut secs = duration_to_secs(v);
+            // Setting time_limit to 0.0 disables the time limit to we treat a duration of zero as
+            // a very small time limit instead.
+            if secs == 0.0 {
+                secs = 1e-12;
+            }
+            secs
+        }).unwrap_or(0.0)
+    );
 }
 
 macro_rules! settings {
@@ -214,7 +224,7 @@ settings! {
     warm_start: bool [update_warm_start, osqp_update_warm_start],
 
     #[doc = "Sets the solve time limit."]
-    time_limit: duration [update_time_limit, osqp_update_time_limit],
+    time_limit: option_duration [update_time_limit, osqp_update_time_limit],
 }
 
 fn duration_to_secs(dur: Duration) -> float {
