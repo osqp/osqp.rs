@@ -9,7 +9,7 @@
 //!   \mbox{subject to} &amp; l \leq A x \leq u
 //! \end{array}\end{split}\]
 //! </div>
-//! 
+//!
 //! <p>
 //! where \(x\) is the optimization variable and \(P \in \mathbf{S}^{n}_{+}\) a positive
 //! semidefinite matrix.
@@ -90,7 +90,7 @@ fn assert_osqp_int_size() {
 
 macro_rules! check {
     ($ret:expr) => {
-        assert_eq!($ret, 0);
+        assert!($ret >= 0, "osqp_solve failed with exit code {}", $ret);
     };
 }
 

@@ -11,6 +11,7 @@ pub enum Status<'a> {
     Solved(Solution<'a>),
     SolvedInaccurate(Solution<'a>),
     MaxIterationsReached(Solution<'a>),
+    TimeLimitReached(Solution<'a>),
     PrimalInfeasible(PrimalInfeasibilityCertificate<'a>),
     PrimalInfeasibleInaccurate(PrimalInfeasibilityCertificate<'a>),
     DualInfeasible(DualInfeasibilityCertificate<'a>),
@@ -57,6 +58,7 @@ impl<'a> Status<'a> {
                 ffi::OSQP_SOLVED => Status::Solved(Solution { prob }),
                 ffi::OSQP_SOLVED_INACCURATE => Status::SolvedInaccurate(Solution { prob }),
                 ffi::OSQP_MAX_ITER_REACHED => Status::MaxIterationsReached(Solution { prob }),
+                ffi::OSQP_TIME_LIMIT_REACHED => Status::TimeLimitReached(Solution { prob }),
                 ffi::OSQP_PRIMAL_INFEASIBLE => {
                     Status::PrimalInfeasible(PrimalInfeasibilityCertificate { prob })
                 }
@@ -134,7 +136,8 @@ impl<'a> Status<'a> {
         match *self {
             Status::Solved(ref solution)
             | Status::SolvedInaccurate(ref solution)
-            | Status::MaxIterationsReached(ref solution) => solution.prob,
+            | Status::MaxIterationsReached(ref solution)
+            | Status::TimeLimitReached(ref solution) => solution.prob,
             Status::PrimalInfeasible(ref cert) | Status::PrimalInfeasibleInaccurate(ref cert) => {
                 cert.prob
             }
