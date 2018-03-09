@@ -40,6 +40,7 @@ deploy:
   github_token:
     secure: "GrUq+NCih+xVlOpCtBOHgstbIFtZ8+eqPzBmbQWvyxLe4CJbV0LF/FKEE0UslCktpkDOe1VmeSzErHuOD+c6Z5AR5qXeIJX6NP0YRwh4lQO1xLeYb5NWPLX9U/7AtcdRxcMZ3FeoAtaJtklrGNG89KITeXe2TMdkqoE2lQT2VOa/igW/i3in/U0+oqyvwEtiRRk0WaULmrlSeNNXVYAY1oRAJNVoLxPoez2AyNTJog7pORIeyL12NlfPQBY2F/ebx9+9jseg11gtXtvYN+c15iyivOkQZ2qM+UDDexO8UsE1gaaSS9/xlYZERtIIwZvjD6rKVetv2m+mk8S8FCFYOsxkHlz5PO3gstg3ZqYOmMKLad6Bm2XQnkQxHmu+328OUP5wuwsJjIArxYFnbQ3tojkNuqjQyFhik0qFlkEGE+Xs0RwzsfKOlSw0n8u2kkLtSN3zjBo8Hq8gBaT8CuR+GMLmYr8MykeSe1EHC9Z9LNhAsjy0EH8zMFUgMsBkxVca88d3SAV/ppvh6le/vDgoA9nkvShyshe/oEjOTY7G4plfs7AmNTPr0lfCDqjQ5rxyOB2qYNE+N4etQfDgSlVrMecuam6Ue7k5rpSMxWKUo8s6dGT3idFEi/alepLjEV2HAQFdNSW5HBvezlp5+A9zEXzN7/HDC1v3OlQOvJzjR/Y="
   local_dir: target/doc/
+  verbose: true
   on:
     branch: master
     os: linux
