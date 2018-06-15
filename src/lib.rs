@@ -67,7 +67,7 @@
 extern crate osqp_sys;
 
 use osqp_sys as ffi;
-use std::ptr::null_mut;
+use std::ptr;
 
 mod csc;
 pub use csc::CscMatrix;
@@ -181,10 +181,7 @@ impl Problem {
     pub fn update_lin_cost(&mut self, q: &[float]) {
         unsafe {
             assert_eq!(self.n, q.len());
-            check!(ffi::osqp_update_lin_cost(
-                self.inner,
-                q.as_ptr() as *mut float
-            ));
+            check!(ffi::osqp_update_lin_cost(self.inner, q.as_ptr()));
         }
     }
 
@@ -193,11 +190,7 @@ impl Problem {
         unsafe {
             assert_eq!(self.m, l.len());
             assert_eq!(self.m, u.len());
-            check!(ffi::osqp_update_bounds(
-                self.inner,
-                l.as_ptr() as *mut float,
-                u.as_ptr() as *mut float,
-            ));
+            check!(ffi::osqp_update_bounds(self.inner, l.as_ptr(), u.as_ptr()));
         }
     }
 
@@ -205,10 +198,7 @@ impl Problem {
     pub fn update_lower_bound(&mut self, l: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
-            check!(ffi::osqp_update_lower_bound(
-                self.inner,
-                l.as_ptr() as *mut float
-            ));
+            check!(ffi::osqp_update_lower_bound(self.inner, l.as_ptr()));
         }
     }
 
@@ -216,10 +206,7 @@ impl Problem {
     pub fn update_upper_bound(&mut self, u: &[float]) {
         unsafe {
             assert_eq!(self.m, u.len());
-            check!(ffi::osqp_update_upper_bound(
-                self.inner,
-                u.as_ptr() as *mut float
-            ));
+            check!(ffi::osqp_update_upper_bound(self.inner, u.as_ptr()));
         }
     }
 
@@ -228,11 +215,7 @@ impl Problem {
         unsafe {
             assert_eq!(self.n, x.len());
             assert_eq!(self.m, y.len());
-            check!(ffi::osqp_warm_start(
-                self.inner,
-                x.as_ptr() as *mut float,
-                y.as_ptr() as *mut float,
-            ));
+            check!(ffi::osqp_warm_start(self.inner, x.as_ptr(), y.as_ptr()));
         }
     }
 
@@ -240,7 +223,7 @@ impl Problem {
     pub fn warm_start_x(&mut self, x: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
-            check!(ffi::osqp_warm_start_x(self.inner, x.as_ptr() as *mut float));
+            check!(ffi::osqp_warm_start_x(self.inner, x.as_ptr()));
         }
     }
 
@@ -248,7 +231,7 @@ impl Problem {
     pub fn warm_start_y(&mut self, y: &[float]) {
         unsafe {
             assert_eq!(self.m, y.len());
-            check!(ffi::osqp_warm_start_y(self.inner, y.as_ptr() as *mut float));
+            check!(ffi::osqp_warm_start_y(self.inner, y.as_ptr()));
         }
     }
 
@@ -268,9 +251,9 @@ impl Problem {
             self.fill_P_upper_tri_data(P);
             check!(ffi::osqp_update_P(
                 self.inner,
-                self.P_upper_tri_data.as_ptr() as *mut float,
-                null_mut(),
-                self.P_upper_tri_data.len() as ffi::osqp_int
+                self.P_upper_tri_data.as_ptr(),
+                ptr::null(),
+                self.P_upper_tri_data.len() as ffi::osqp_int,
             ));
         }
     }
@@ -290,9 +273,9 @@ impl Problem {
 
             check!(ffi::osqp_update_A(
                 self.inner,
-                A.data.as_ptr() as *mut float,
-                null_mut(),
-                A.data.len() as ffi::osqp_int
+                A.data.as_ptr(),
+                ptr::null(),
+                A.data.len() as ffi::osqp_int,
             ));
         }
     }
@@ -321,11 +304,11 @@ impl Problem {
             self.fill_P_upper_tri_data(P);
             check!(ffi::osqp_update_P_A(
                 self.inner,
-                self.P_upper_tri_data.as_ptr() as *mut float,
-                null_mut(),
+                self.P_upper_tri_data.as_ptr(),
+                ptr::null(),
                 self.P_upper_tri_data.len() as ffi::osqp_int,
-                A.data.as_ptr() as *mut float,
-                null_mut(),
+                A.data.as_ptr(),
+                ptr::null(),
                 A.data.len() as ffi::osqp_int,
             ));
         }

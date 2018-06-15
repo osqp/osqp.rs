@@ -5,7 +5,7 @@ use {c_float, c_int, OSQPTimer};
 pub const SUITESPARSE_LDL_SOLVER: linsys_solver_type = 0;
 pub const MKL_PARDISO_SOLVER: linsys_solver_type = 1;
 /// Linear System Solvers *
-pub type linsys_solver_type = ::std::os::raw::c_uint;
+pub type linsys_solver_type = u32;
 /// Matrix in compressed-column or triplet form
 #[repr(C)]
 pub struct csc {
@@ -329,7 +329,7 @@ extern "C" {
     /// @param  work  Workspace
     /// @param  q_new New linear cost
     /// @return       Exitflag for errors and warnings
-    pub fn osqp_update_lin_cost(work: *mut OSQPWorkspace, q_new: *mut c_float) -> c_int;
+    pub fn osqp_update_lin_cost(work: *mut OSQPWorkspace, q_new: *const c_float) -> c_int;
 }
 extern "C" {
     /// Update lower and upper bounds in the problem constraints
@@ -339,8 +339,8 @@ extern "C" {
     /// @return        Exitflag: 1 if new lower bound is not <= than new upper bound
     pub fn osqp_update_bounds(
         work: *mut OSQPWorkspace,
-        l_new: *mut c_float,
-        u_new: *mut c_float,
+        l_new: *const c_float,
+        u_new: *const c_float,
     ) -> c_int;
 }
 extern "C" {
@@ -348,14 +348,14 @@ extern "C" {
     /// @param  work   Workspace
     /// @param  l_new New lower bound
     /// @return        Exitflag: 1 if new lower bound is not <= than upper bound
-    pub fn osqp_update_lower_bound(work: *mut OSQPWorkspace, l_new: *mut c_float) -> c_int;
+    pub fn osqp_update_lower_bound(work: *mut OSQPWorkspace, l_new: *const c_float) -> c_int;
 }
 extern "C" {
     /// Update upper bound in the problem constraints
     /// @param  work   Workspace
     /// @param  u_new New upper bound
     /// @return        Exitflag: 1 if new upper bound is not >= than lower bound
-    pub fn osqp_update_upper_bound(work: *mut OSQPWorkspace, u_new: *mut c_float) -> c_int;
+    pub fn osqp_update_upper_bound(work: *mut OSQPWorkspace, u_new: *const c_float) -> c_int;
 }
 extern "C" {
     /// Warm start primal and dual variables
@@ -363,21 +363,22 @@ extern "C" {
     /// @param  x    Primal variable
     /// @param  y    Dual variable
     /// @return      Exitflag
-    pub fn osqp_warm_start(work: *mut OSQPWorkspace, x: *mut c_float, y: *mut c_float) -> c_int;
+    pub fn osqp_warm_start(work: *mut OSQPWorkspace, x: *const c_float, y: *const c_float)
+        -> c_int;
 }
 extern "C" {
     /// Warm start primal variable
     /// @param  work Workspace structure
     /// @param  x    Primal variable
     /// @return      Exitflag
-    pub fn osqp_warm_start_x(work: *mut OSQPWorkspace, x: *mut c_float) -> c_int;
+    pub fn osqp_warm_start_x(work: *mut OSQPWorkspace, x: *const c_float) -> c_int;
 }
 extern "C" {
     /// Warm start dual variable
     /// @param  work Workspace structure
     /// @param  y    Dual variable
     /// @return      Exitflag
-    pub fn osqp_warm_start_y(work: *mut OSQPWorkspace, y: *mut c_float) -> c_int;
+    pub fn osqp_warm_start_y(work: *mut OSQPWorkspace, y: *const c_float) -> c_int;
 }
 extern "C" {
     /// Update elements of matrix P (upper-diagonal)
@@ -396,8 +397,8 @@ extern "C" {
     /// <0: error in the update
     pub fn osqp_update_P(
         work: *mut OSQPWorkspace,
-        Px_new: *mut c_float,
-        Px_new_idx: *mut c_int,
+        Px_new: *const c_float,
+        Px_new_idx: *const c_int,
         P_new_n: c_int,
     ) -> c_int;
 }
@@ -417,8 +418,8 @@ extern "C" {
     /// <0: error in the update
     pub fn osqp_update_A(
         work: *mut OSQPWorkspace,
-        Ax_new: *mut c_float,
-        Ax_new_idx: *mut c_int,
+        Ax_new: *const c_float,
+        Ax_new_idx: *const c_int,
         A_new_n: c_int,
     ) -> c_int;
 }
@@ -446,11 +447,11 @@ extern "C" {
     /// <0: error in the update
     pub fn osqp_update_P_A(
         work: *mut OSQPWorkspace,
-        Px_new: *mut c_float,
-        Px_new_idx: *mut c_int,
+        Px_new: *const c_float,
+        Px_new_idx: *const c_int,
         P_new_n: c_int,
-        Ax_new: *mut c_float,
-        Ax_new_idx: *mut c_int,
+        Ax_new: *const c_float,
+        Ax_new_idx: *const c_int,
         A_new_n: c_int,
     ) -> c_int;
 }
@@ -578,4 +579,4 @@ pub const OSQP_DUAL_INFEASIBLE: ffi_osqp_status = -4;
 pub const OSQP_SIGINT: ffi_osqp_status = -5;
 pub const OSQP_TIME_LIMIT_REACHED: ffi_osqp_status = -6;
 pub const OSQP_UNSOLVED: ffi_osqp_status = -10;
-pub type ffi_osqp_status = ::std::os::raw::c_int;
+pub type ffi_osqp_status = i32;

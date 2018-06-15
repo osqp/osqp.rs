@@ -16,7 +16,7 @@ pub enum LinsysSolver {
 }
 
 macro_rules! u32_to_osqp_int {
-    ($name:ident, $value:expr) => ({
+    ($name:ident, $value:expr) => {{
         let value = $value;
         assert!(
             value as u64 <= ffi::osqp_int::max_value() as u64,
@@ -24,7 +24,7 @@ macro_rules! u32_to_osqp_int {
             stringify!($name)
         );
         value as ffi::osqp_int
-    });
+    }};
 }
 
 macro_rules! rust_type {

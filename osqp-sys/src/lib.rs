@@ -19,6 +19,7 @@ pub enum OSQPTimer {}
 #[cfg(test)]
 mod tests {
     use std::mem;
+
     use super::*;
 
     extern "C" {
