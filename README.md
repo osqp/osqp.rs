@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/oxfordcontrol/osqp.rs.svg?branch=master)](https://travis-ci.org/oxfordcontrol/osqp.rs)
 [![Build status](https://ci.appveyor.com/api/projects/status/qb4a1mac09k927ag/branch/master?svg=true)](https://ci.appveyor.com/project/ebarnard/osqp-rs/branch/master)
 
-Rust wrapper for [OSQP](https://osqp.readthedocs.io/): the Operator Splitting QP Solver.
+Rust wrapper for [OSQP](https://osqp.org/): the Operator Splitting QP Solver.
 
 The OSQP (Operator Splitting Quadratic Program) solver is a numerical optimization package for solving problems in the form
 ```
