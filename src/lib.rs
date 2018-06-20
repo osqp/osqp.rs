@@ -16,7 +16,7 @@
 //! </p>
 //!
 //! Further information about the solver is available at
-//! [osqp.readthedocs.io](https://osqp.readthedocs.io/).
+//! [osqp.org](https://osqp.org/).
 //!
 //! # Example
 //!
