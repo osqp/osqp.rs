@@ -40,9 +40,9 @@ fn main() {
         .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE", &out_dir)
         .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL", &out_dir)
         .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO", &out_dir)
-        .build_target("osqpstatic")
+        .build_target("osqp")
         .build();
 
     println!("cargo:rustc-link-search=native={}", out_dir);
-    println!("cargo:rustc-link-lib=static=osqpstatic");
+    println!("cargo:rustc-link-lib=static=osqp");
 }
