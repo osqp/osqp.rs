@@ -1,3 +1,4 @@
+#![allow(non_camel_case_types)]
 use osqp_sys as ffi;
 use std::mem;
 use std::ptr;
