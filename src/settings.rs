@@ -8,7 +8,7 @@ use {float, Problem};
 /// The linear system solver for OSQP to use.
 #[derive(Clone, Debug, PartialEq)]
 pub enum LinsysSolver {
-    SuiteSparse,
+    qdldl,
     MklPardiso,
     // Prevent exhaustive enum matching
     #[doc(hidden)]
@@ -43,7 +43,7 @@ macro_rules! convert_rust_type {
     ($name:ident, bool, $value:expr) => ($value as ffi::osqp_int);
     ($name:ident, linsys_solver, $value:expr) => (
         match $value {
-            LinsysSolver::SuiteSparse => ffi::SUITESPARSE_LDL_SOLVER,
+            LinsysSolver::qdldl => ffi::QDLDL_SOLVER,
             LinsysSolver::MklPardiso => ffi::MKL_PARDISO_SOLVER,
             LinsysSolver::__Nonexhaustive => unreachable!(),
         }
