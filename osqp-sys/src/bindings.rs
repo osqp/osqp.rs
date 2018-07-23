@@ -2,7 +2,7 @@
 
 use {c_float, c_int, OSQPTimer};
 
-pub const SUITESPARSE_LDL_SOLVER: linsys_solver_type = 0;
+pub const QDLDL_SOLVER: linsys_solver_type = 0;
 pub const MKL_PARDISO_SOLVER: linsys_solver_type = 1;
 /// Linear System Solvers *
 pub type linsys_solver_type = u32;
