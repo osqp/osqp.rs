@@ -1,4 +1,3 @@
-#![allow(non_camel_case_types)]
 use osqp_sys as ffi;
 use std::mem;
 use std::ptr;
@@ -9,7 +8,7 @@ use {float, Problem};
 /// The linear system solver for OSQP to use.
 #[derive(Clone, Debug, PartialEq)]
 pub enum LinsysSolver {
-    qdldl,
+    Qdldl,
     MklPardiso,
     // Prevent exhaustive enum matching
     #[doc(hidden)]
@@ -44,7 +43,7 @@ macro_rules! convert_rust_type {
     ($name:ident, bool, $value:expr) => ($value as ffi::osqp_int);
     ($name:ident, linsys_solver, $value:expr) => (
         match $value {
-            LinsysSolver::qdldl => ffi::QDLDL_SOLVER,
+            LinsysSolver::Qdldl => ffi::QDLDL_SOLVER,
             LinsysSolver::MklPardiso => ffi::MKL_PARDISO_SOLVER,
             LinsysSolver::__Nonexhaustive => unreachable!(),
         }
