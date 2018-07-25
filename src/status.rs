@@ -16,6 +16,7 @@ pub enum Status<'a> {
     PrimalInfeasibleInaccurate(PrimalInfeasibilityCertificate<'a>),
     DualInfeasible(DualInfeasibilityCertificate<'a>),
     DualInfeasibleInaccurate(DualInfeasibilityCertificate<'a>),
+    NonConvex(Failure<'a>),
     // Prevent exhaustive enum matching
     #[doc(hidden)]
     __Nonexhaustive,
@@ -36,6 +37,12 @@ pub struct PrimalInfeasibilityCertificate<'a> {
 /// A proof of dual infeasibility.
 #[derive(Clone)]
 pub struct DualInfeasibilityCertificate<'a> {
+    prob: &'a Problem,
+}
+
+/// A problem that failed to solve.
+#[derive(Clone)]
+pub struct Failure<'a> {
     prob: &'a Problem,
 }
 
@@ -71,6 +78,7 @@ impl<'a> Status<'a> {
                 ffi::OSQP_DUAL_INFEASIBLE_INACCURATE => {
                     Status::DualInfeasibleInaccurate(DualInfeasibilityCertificate { prob })
                 }
+                ffi::OSQP_NON_CVX => Status::NonConvex(Failure { prob }),
                 _ => unreachable!(),
             }
         }
@@ -144,6 +152,7 @@ impl<'a> Status<'a> {
             Status::DualInfeasible(ref cert) | Status::DualInfeasibleInaccurate(ref cert) => {
                 cert.prob
             }
+            Status::NonConvex(ref failure) => failure.prob,
             Status::__Nonexhaustive => unreachable!(),
         }
     }
@@ -238,6 +247,12 @@ impl<'a> fmt::Debug for DualInfeasibilityCertificate<'a> {
         fmt.debug_struct("DualInfeasibilityCertificate")
             .field("delta_x", &self.delta_x())
             .finish()
+    }
+}
+
+impl<'a> fmt::Debug for Failure<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Failure").finish()
     }
 }
 
