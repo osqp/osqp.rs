@@ -2,7 +2,7 @@
 
 use {c_float, c_int, OSQPTimer};
 
-pub const SUITESPARSE_LDL_SOLVER: linsys_solver_type = 0;
+pub const QDLDL_SOLVER: linsys_solver_type = 0;
 pub const MKL_PARDISO_SOLVER: linsys_solver_type = 1;
 /// Linear System Solvers *
 pub type linsys_solver_type = u32;
@@ -578,5 +578,6 @@ pub const OSQP_PRIMAL_INFEASIBLE: ffi_osqp_status = -3;
 pub const OSQP_DUAL_INFEASIBLE: ffi_osqp_status = -4;
 pub const OSQP_SIGINT: ffi_osqp_status = -5;
 pub const OSQP_TIME_LIMIT_REACHED: ffi_osqp_status = -6;
+pub const OSQP_NON_CVX: ffi_osqp_status = -7;
 pub const OSQP_UNSOLVED: ffi_osqp_status = -10;
 pub type ffi_osqp_status = i32;

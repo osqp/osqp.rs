@@ -8,7 +8,7 @@ use std::process::Command;
 fn main() {
     if !Path::new("osqp/README.md").exists() {
         let _ = Command::new("git")
-            .args(&["submodule", "update", "--init"])
+            .args(&["submodule", "update", "--init", "--recursive"])
             .status();
     }
 
@@ -44,5 +44,5 @@ fn main() {
         .build();
 
     println!("cargo:rustc-link-search=native={}", out_dir);
-    println!("cargo:rustc-link-lib=static=osqpstatic");
+    println!("cargo:rustc-link-lib=static=osqp");
 }

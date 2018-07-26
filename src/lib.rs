@@ -76,8 +76,10 @@ mod settings;
 pub use settings::{LinsysSolver, Settings};
 
 mod status;
-pub use status::{DualInfeasibilityCertificate, PolishStatus, PrimalInfeasibilityCertificate,
-                 Solution, Status};
+pub use status::{
+    DualInfeasibilityCertificate, Failure, PolishStatus, PrimalInfeasibilityCertificate, Solution,
+    Status,
+};
 
 #[allow(non_camel_case_types)]
 type float = f64;

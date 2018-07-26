@@ -91,6 +91,7 @@ mod tests {
         osqp_set_default_settings(&mut settings);
         settings.alpha = 1.0;
         settings.adaptive_rho = 0;
+        settings.linsys_solver = QDLDL_SOLVER;
         let settings = &mut settings as *mut OSQPSettings;
 
         // Setup workspace
