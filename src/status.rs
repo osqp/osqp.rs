@@ -40,7 +40,7 @@ pub struct DualInfeasibilityCertificate<'a> {
     prob: &'a Problem,
 }
 
-/// A problem that failed to solve.
+/// A problem that failed to be solved.
 #[derive(Clone)]
 pub struct Failure<'a> {
     prob: &'a Problem,
