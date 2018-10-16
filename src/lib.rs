@@ -111,7 +111,7 @@ pub struct Problem {
 impl Problem {
     /// Initialises the solver and validates the problem.
     ///
-    /// Panics if the problem is invalid.
+    /// Panics if the problem is invalid or non-convex.
     #[allow(non_snake_case)]
     pub fn new<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
         P: T,
