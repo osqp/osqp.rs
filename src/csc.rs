@@ -74,25 +74,25 @@ impl<'a> CscMatrix<'a> {
 
         let mut col_start_idx = 0;
         let mut other_col_start_idx = 0;
-        for (col_num, (&col_end_idx, &other_col_end_idx)) in self.indptr
+        for (col_num, (&col_end_idx, &other_col_end_idx)) in self
+            .indptr
             .iter()
             .zip(other.indptr.iter())
             .skip(1)
             .enumerate()
         {
-            assert!(
-                self.indices[col_start_idx..col_end_idx]
-                    .iter()
-                    .chain(once(&(self.nrows + 1)))
-                    .zip(
-                        other.indices[other_col_start_idx..other_col_end_idx]
-                            .iter()
-                            .chain(once(&(self.nrows + 1)))
-                    )
-                    .take_while(|&(&row_num, &other_row_num)| row_num <= col_num
-                        || other_row_num <= col_num)
-                    .all(|(&row_num, &other_row_num)| row_num == other_row_num)
-            );
+            assert!(self.indices[col_start_idx..col_end_idx]
+                .iter()
+                .chain(once(&(self.nrows + 1)))
+                .zip(
+                    other.indices[other_col_start_idx..other_col_end_idx]
+                        .iter()
+                        .chain(once(&(self.nrows + 1)))
+                )
+                .take_while(
+                    |&(&row_num, &other_row_num)| row_num <= col_num || other_row_num <= col_num
+                )
+                .all(|(&row_num, &other_row_num)| row_num == other_row_num));
             col_start_idx = col_end_idx;
             other_col_start_idx = other_col_end_idx;
         }
@@ -161,7 +161,8 @@ where
     J: IntoIterator<Item = &'a float>,
 {
     fn from(rows: I) -> CscMatrix<'static> {
-        let rows: Vec<Vec<float>> = rows.into_iter()
+        let rows: Vec<Vec<float>> = rows
+            .into_iter()
             .map(|r| r.into_iter().map(|&v| v).collect())
             .collect();
 
