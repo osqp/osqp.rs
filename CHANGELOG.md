@@ -1,3 +1,8 @@
+Version 0.5.0 (December 10, 2018)
+-----------
+- Update to OSQP 0.5.0 (see [OSQP changelog][osqp-clog] for details).
+- `Problem::new` now returns a `Result` to indicate problem setup failure.
+
 Version 0.4.1 (October 16, 2018)
 -----------
 - Update to OSQP 0.4.1 (see [OSQP changelog][osqp-clog] for details).

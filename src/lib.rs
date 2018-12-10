@@ -49,7 +49,7 @@
 //! # let settings = settings.adaptive_rho(false);
 //!
 //! // Create an OSQP problem
-//! let mut prob = Problem::new(P, q, A, l, u, &settings);
+//! let mut prob = Problem::new(P, q, A, l, u, &settings).expect("failed to setup problem");
 //!
 //! // Solve problem
 //! let result = prob.solve();
@@ -91,9 +91,25 @@ fn assert_osqp_int_size() {
 }
 
 macro_rules! check {
-    ($ret:expr) => {
-        assert!($ret >= 0, "osqp_solve failed with exit code {}", $ret);
+    ($fun:ident, $ret:expr) => {
+        assert!(
+            $ret >= 0,
+            "osqp_{} failed with exit code {}",
+            stringify!($fun),
+            $ret
+        );
     };
+}
+
+/// An error that can occur when setting up the solver.
+///
+/// Currently the solver does not return information on why setup failed so the contents of this
+/// enum should be ignored.
+#[derive(Debug)]
+pub enum SetupError {
+    // Prevent exhaustive enum matching
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 /// An instance of the OSQP solver.
@@ -111,7 +127,10 @@ pub struct Problem {
 impl Problem {
     /// Initialises the solver and validates the problem.
     ///
-    /// Panics if the problem is invalid or non-convex.
+    /// Returns an error if the problem is non-convex or the solver cannot be initialised.
+    ///
+    /// Panics if any of the matrix or vector dimensions are incompatible or if either of the CSC
+    /// matrices is not valid.
     #[allow(non_snake_case)]
     pub fn new<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
         P: T,
@@ -120,7 +139,7 @@ impl Problem {
         l: &[float],
         u: &[float],
         settings: &Settings,
-    ) -> Problem {
+    ) -> Result<Problem, SetupError> {
         // Function split to avoid monomorphising the main body of Problem::new.
         Problem::new_inner(P.into(), q, A.into(), l, u, settings)
     }
@@ -133,7 +152,7 @@ impl Problem {
         l: &[float],
         u: &[float],
         settings: &Settings,
-    ) -> Problem {
+    ) -> Result<Problem, SetupError> {
         unsafe {
             // Ensure the provided data is valid. While OSQP internally performs some validity
             // checks it can be made to read outside the provided buffers so all the invariants
@@ -168,14 +187,16 @@ impl Problem {
             let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
 
             let inner = ffi::osqp_setup(&data, settings);
-            assert!(inner as usize != 0, "osqp setup failure");
+            if inner.is_null() {
+                return Err(SetupError::__Nonexhaustive);
+            }
 
-            Problem {
+            Ok(Problem {
                 inner,
                 n,
                 m,
                 P_upper_tri_data: Vec::with_capacity((P.data.len() + n + 1) / 2),
-            }
+            })
         }
     }
 
@@ -183,7 +204,10 @@ impl Problem {
     pub fn update_lin_cost(&mut self, q: &[float]) {
         unsafe {
             assert_eq!(self.n, q.len());
-            check!(ffi::osqp_update_lin_cost(self.inner, q.as_ptr()));
+            check!(
+                update_lin_cost,
+                ffi::osqp_update_lin_cost(self.inner, q.as_ptr())
+            );
         }
     }
 
@@ -192,7 +216,10 @@ impl Problem {
         unsafe {
             assert_eq!(self.m, l.len());
             assert_eq!(self.m, u.len());
-            check!(ffi::osqp_update_bounds(self.inner, l.as_ptr(), u.as_ptr()));
+            check!(
+                update_bounds,
+                ffi::osqp_update_bounds(self.inner, l.as_ptr(), u.as_ptr())
+            );
         }
     }
 
@@ -200,7 +227,10 @@ impl Problem {
     pub fn update_lower_bound(&mut self, l: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
-            check!(ffi::osqp_update_lower_bound(self.inner, l.as_ptr()));
+            check!(
+                update_lower_bound,
+                ffi::osqp_update_lower_bound(self.inner, l.as_ptr())
+            );
         }
     }
 
@@ -208,7 +238,10 @@ impl Problem {
     pub fn update_upper_bound(&mut self, u: &[float]) {
         unsafe {
             assert_eq!(self.m, u.len());
-            check!(ffi::osqp_update_upper_bound(self.inner, u.as_ptr()));
+            check!(
+                update_upper_bound,
+                ffi::osqp_update_upper_bound(self.inner, u.as_ptr())
+            );
         }
     }
 
@@ -217,7 +250,10 @@ impl Problem {
         unsafe {
             assert_eq!(self.n, x.len());
             assert_eq!(self.m, y.len());
-            check!(ffi::osqp_warm_start(self.inner, x.as_ptr(), y.as_ptr()));
+            check!(
+                warm_start,
+                ffi::osqp_warm_start(self.inner, x.as_ptr(), y.as_ptr())
+            );
         }
     }
 
@@ -225,7 +261,7 @@ impl Problem {
     pub fn warm_start_x(&mut self, x: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
-            check!(ffi::osqp_warm_start_x(self.inner, x.as_ptr()));
+            check!(warm_start_x, ffi::osqp_warm_start_x(self.inner, x.as_ptr()));
         }
     }
 
@@ -233,7 +269,7 @@ impl Problem {
     pub fn warm_start_y(&mut self, y: &[float]) {
         unsafe {
             assert_eq!(self.m, y.len());
-            check!(ffi::osqp_warm_start_y(self.inner, y.as_ptr()));
+            check!(warm_start_y, ffi::osqp_warm_start_y(self.inner, y.as_ptr()));
         }
     }
 
@@ -251,12 +287,15 @@ impl Problem {
             P.assert_same_upper_tri_sparsity_structure(&P_ffi);
 
             self.fill_P_upper_tri_data(P);
-            check!(ffi::osqp_update_P(
-                self.inner,
-                self.P_upper_tri_data.as_ptr(),
-                ptr::null(),
-                self.P_upper_tri_data.len() as ffi::osqp_int,
-            ));
+            check!(
+                update_P,
+                ffi::osqp_update_P(
+                    self.inner,
+                    self.P_upper_tri_data.as_ptr(),
+                    ptr::null(),
+                    self.P_upper_tri_data.len() as ffi::osqp_int,
+                )
+            );
         }
     }
 
@@ -273,12 +312,15 @@ impl Problem {
             let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
             A.assert_same_sparsity_structure(&A_ffi);
 
-            check!(ffi::osqp_update_A(
-                self.inner,
-                A.data.as_ptr(),
-                ptr::null(),
-                A.data.len() as ffi::osqp_int,
-            ));
+            check!(
+                update_A,
+                ffi::osqp_update_A(
+                    self.inner,
+                    A.data.as_ptr(),
+                    ptr::null(),
+                    A.data.len() as ffi::osqp_int,
+                )
+            );
         }
     }
 
@@ -304,15 +346,18 @@ impl Problem {
             A.assert_same_sparsity_structure(&A_ffi);
 
             self.fill_P_upper_tri_data(P);
-            check!(ffi::osqp_update_P_A(
-                self.inner,
-                self.P_upper_tri_data.as_ptr(),
-                ptr::null(),
-                self.P_upper_tri_data.len() as ffi::osqp_int,
-                A.data.as_ptr(),
-                ptr::null(),
-                A.data.len() as ffi::osqp_int,
-            ));
+            check!(
+                update_P_A,
+                ffi::osqp_update_P_A(
+                    self.inner,
+                    self.P_upper_tri_data.as_ptr(),
+                    ptr::null(),
+                    self.P_upper_tri_data.len() as ffi::osqp_int,
+                    A.data.as_ptr(),
+                    ptr::null(),
+                    A.data.len() as ffi::osqp_int,
+                )
+            );
         }
     }
 
@@ -337,7 +382,7 @@ impl Problem {
     /// Attempts to solve the quadratic program.
     pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
-            check!(ffi::osqp_solve(self.inner));
+            check!(solve, ffi::osqp_solve(self.inner));
             Status::from_problem(self)
         }
     }
@@ -376,7 +421,7 @@ mod tests {
         let settings = settings.adaptive_rho(false);
 
         // Check updating P and A together
-        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
+        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings).unwrap();
         prob.update_P_A(P, A);
         let result = prob.solve();
         let x = result.solution().unwrap().x();
@@ -385,7 +430,7 @@ mod tests {
         assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
 
         // Check updating P and A separately
-        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings);
+        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings).unwrap();
         prob.update_P(P);
         prob.update_A(A);
         let result = prob.solve();
