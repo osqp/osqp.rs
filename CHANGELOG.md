@@ -1,3 +1,7 @@
+Unreleased
+-----------
+- Add `CscMatrix::from_column_iter_dense` and `CscMatrix::from_row_iter_dense` to construct a dense CscMatrix with elements filled from column-major and row-major iterators.
+
 Version 0.5.0 (December 10, 2018)
 -----------
 - Update to OSQP 0.5.0 (see [OSQP changelog][osqp-clog] for details).

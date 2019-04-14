@@ -1,6 +1,6 @@
 use osqp_sys as ffi;
 use std::borrow::Cow;
-use std::iter::once;
+use std::iter;
 use std::slice;
 
 use float;
@@ -27,6 +27,67 @@ pub struct CscMatrix<'a> {
 }
 
 impl<'a> CscMatrix<'a> {
+    /// Creates a dense CSC matrix with its elements filled with the components provided by an
+    /// iterator in column-major order.
+    ///
+    /// Panics if `iter` contains fewer than `nrows * ncols` elements.
+    pub fn from_column_iter_dense<I: IntoIterator<Item = float>>(
+        nrows: usize,
+        ncols: usize,
+        iter: I,
+    ) -> CscMatrix<'static> {
+        CscMatrix::from_iter_dense_inner(nrows, ncols, |size| {
+            let mut data = Vec::with_capacity(size);
+            data.extend(iter.into_iter().take(size));
+            assert_eq!(size, data.len());
+            data
+        })
+    }
+
+    /// Creates a dense CSC matrix with its elements filled with the components provided by an
+    /// iterator in row-major order.
+    ///
+    /// The order of elements in the slice must follow the usual mathematic writing, i.e.,
+    /// row-by-row.
+    ///
+    /// Panics if `iter` contains fewer than `nrows * ncols` elements.
+    pub fn from_row_iter_dense<I: IntoIterator<Item = float>>(
+        nrows: usize,
+        ncols: usize,
+        iter: I,
+    ) -> CscMatrix<'static> {
+        CscMatrix::from_iter_dense_inner(nrows, ncols, |size| {
+            let mut iter = iter.into_iter();
+            let mut data = vec![0.0; size];
+            for r in 0..nrows {
+                for c in 0..ncols {
+                    data[c * ncols + r] = iter.next().expect("not enough elements in iterator");
+                }
+            }
+            data
+        })
+    }
+
+    fn from_iter_dense_inner<F: FnOnce(usize) -> Vec<float>>(
+        nrows: usize,
+        ncols: usize,
+        f: F,
+    ) -> CscMatrix<'static> {
+        let size = nrows
+            .checked_mul(ncols)
+            .expect("overflow calculating matrix size");
+
+        let data = f(size);
+
+        CscMatrix {
+            nrows,
+            ncols,
+            indptr: Cow::Owned((0..ncols + 1).map(|i| i * nrows).collect()),
+            indices: Cow::Owned(iter::repeat(0..nrows).take(ncols).flat_map(|i| i).collect()),
+            data: Cow::Owned(data),
+        }
+    }
+
     pub(crate) unsafe fn to_ffi(&self) -> ffi::csc {
         self.assert_valid();
 
@@ -83,11 +144,11 @@ impl<'a> CscMatrix<'a> {
         {
             assert!(self.indices[col_start_idx..col_end_idx]
                 .iter()
-                .chain(once(&(self.nrows + 1)))
+                .chain(iter::once(&(self.nrows + 1)))
                 .zip(
                     other.indices[other_col_start_idx..other_col_end_idx]
                         .iter()
-                        .chain(once(&(self.nrows + 1)))
+                        .chain(iter::once(&(self.nrows + 1)))
                 )
                 .take_while(
                     |&(&row_num, &other_row_num)| row_num <= col_num || other_row_num <= col_num
@@ -237,6 +298,28 @@ mod tests {
         assert_eq!(csc.indptr, csc_ref.indptr);
         assert_eq!(csc.indices, csc_ref.indices);
         assert_eq!(csc.data, csc_ref.data);
+    }
+
+    #[test]
+    fn csc_from_iter_dense() {
+        let mat1 = CscMatrix::from_column_iter_dense(
+            3,
+            3,
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+                .iter()
+                .cloned(),
+        );
+        let mat2 = CscMatrix::from_row_iter_dense(
+            3,
+            3,
+            [1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0]
+                .iter()
+                .cloned(),
+        );
+        let mat3: CscMatrix = (&[[1.0, 4.0, 7.0], [2.0, 5.0, 8.0], [3.0, 6.0, 9.0]]).into();
+
+        assert_eq!(mat1, mat3);
+        assert_eq!(mat2, mat3);
     }
 
     #[test]
