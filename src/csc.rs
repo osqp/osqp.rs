@@ -134,6 +134,24 @@ impl<'a> CscMatrix<'a> {
             });
         }
     }
+
+    /// Constructs a matrix from an iterator
+    ///
+    /// The iterator should deliver values in column major format of a dense data block, otherwise 
+    /// there are more efficient methods to construct the sparse matrix. Note that this copies all
+    /// elements of the matrix.
+    ///
+    pub fn from_iterator_dense<'b, I: IntoIterator<Item=&'b float>>(nrows: usize, ncols: usize, iter: I) -> CscMatrix<'static> {
+        use std::iter;
+
+        CscMatrix {
+            nrows,
+            ncols,
+            indptr: (0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>().into(),
+            indices: iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>().into(),
+            data: iter.into_iter().cloned().collect::<Vec<float>>().into(),
+        }
+    }
 }
 
 // Any &CscMatrix can be converted into a CscMatrix without allocation due to the use of Cow.
@@ -237,6 +255,14 @@ mod tests {
         assert_eq!(csc.indptr, csc_ref.indptr);
         assert_eq!(csc.indices, csc_ref.indices);
         assert_eq!(csc.data, csc_ref.data);
+    }
+
+    #[test]
+    fn same_iterator_dense() {
+        let mat1 = CscMatrix::from_iterator_dense(3, 3, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        let mat2: CscMatrix = (&[[1.0,4.0,7.0],[2.0,5.0,8.0],[3.0, 6.0, 9.0]]).into(); 
+
+        assert_eq!(mat1, mat2);
     }
 
     #[test]
