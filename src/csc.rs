@@ -151,9 +151,9 @@ impl<'a> CscMatrix<'a> {
         CscMatrix {
             nrows,
             ncols,
-            indptr: (0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>().into(),
-            indices: iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>().into(),
-            data: buf.into()
+            indptr: Cow::Owned((0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>()),
+            indices: Cow::Owned(iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>()),
+            data: Cow::Owned(buf)
         }
     }
 
@@ -171,9 +171,9 @@ impl<'a> CscMatrix<'a> {
         CscMatrix {
             nrows,
             ncols,
-            indptr: (0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>().into(),
-            indices: iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>().into(),
-            data: slice.into()
+            indptr: Cow::Owned((0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>()),
+            indices: Cow::Owned(iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>()),
+            data: Cow::Borrowed(slice)
         }
     }
 }
