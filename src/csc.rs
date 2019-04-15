@@ -141,15 +141,39 @@ impl<'a> CscMatrix<'a> {
     /// there are more efficient methods to construct the sparse matrix. Note that this copies all
     /// elements of the matrix.
     ///
-    pub fn from_iterator_dense<'b, I: IntoIterator<Item=&'b float>>(nrows: usize, ncols: usize, iter: I) -> CscMatrix<'static> {
+    pub fn from_iterator_dense<I: IntoIterator<Item=float>>(nrows: usize, ncols: usize, iter: I) -> CscMatrix<'static> {
         use std::iter;
+
+        let buf = iter.into_iter().collect::<Vec<float>>();
+
+        assert_eq!(nrows * ncols, buf.len());
 
         CscMatrix {
             nrows,
             ncols,
             indptr: (0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>().into(),
             indices: iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>().into(),
-            data: iter.into_iter().cloned().collect::<Vec<float>>().into(),
+            data: buf.into()
+        }
+    }
+
+    /// Construct a matrix from a borrowed slice
+    ///
+    /// This will borrow a slice in column major format and construct the sparse matrix. Please
+    /// note that this will not copy the data and therefore the data has to be valid as long as the
+    /// sparse matrix.
+    ///
+    pub fn from_slice_dense(nrows: usize, ncols: usize, slice: &'a [float]) -> CscMatrix<'a> {
+        use std::iter;
+
+        assert_eq!(nrows * ncols, slice.len());
+
+        CscMatrix {
+            nrows,
+            ncols,
+            indptr: (0..ncols+1).map(|i| i * nrows).collect::<Vec<usize>>().into(),
+            indices: iter::repeat(0..nrows).take(ncols).flatten().collect::<Vec<usize>>().into(),
+            data: slice.into()
         }
     }
 }
@@ -258,11 +282,15 @@ mod tests {
     }
 
     #[test]
-    fn same_iterator_dense() {
-        let mat1 = CscMatrix::from_iterator_dense(3, 3, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
-        let mat2: CscMatrix = (&[[1.0,4.0,7.0],[2.0,5.0,8.0],[3.0, 6.0, 9.0]]).into(); 
+    fn same_iterator_slice_dense() {
+        let mat1 = CscMatrix::from_iterator_dense(3, 3, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        let mat2 = CscMatrix::from_slice_dense(3, 3, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        let mat3: CscMatrix = (&[[1.0,4.0,7.0],[2.0,5.0,8.0],[3.0, 6.0, 9.0]]).into(); 
 
-        assert_eq!(mat1, mat2);
+        println!("{:?}", mat2);
+
+        assert_eq!(mat1, mat3);
+        assert_eq!(mat2, mat3);
     }
 
     #[test]
