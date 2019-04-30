@@ -14,21 +14,43 @@ matrix:
       env:
         - CHANNEL=stable
         - TARGET=i686-apple-darwin
+    - os: windows
+      env:
+        - CHANNEL=stable
+        - TARGET=x86_64-pc-windows-msvc
+    - os: windows
+      env:
+        - CHANNEL=stable
+        - TARGET=i686-pc-windows-msvc
     - os: linux
       env:
         - CHANNEL=1.20.0
         - TARGET=x86_64-unknown-linux-gnu
+    - os: windows
+      env:
+        - CHANNEL=1.20.0
+        - TARGET=i686-pc-windows-msvc
     - os: linux
       env:
         - CHANNEL=beta
         - TARGET=x86_64-unknown-linux-gnu
+    - os: windows
+      env:
+        - CHANNEL=beta
+        - TARGET=i686-pc-windows-msvc
     - os: linux
       env:
         - CHANNEL=nightly
         - TARGET=x86_64-unknown-linux-gnu
+    - os: windows
+      env:
+        - CHANNEL=nightly
+        - TARGET=i686-pc-windows-msvc
+
 install:
-  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $CHANNEL --default-host $TARGET -y
-  - export PATH=$HOME/.cargo/bin:$PATH
+  - export RUSTUP_TOOLCHAIN="${CHANNEL}-${TARGET}"
+  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain "${RUSTUP_TOOLCHAIN}" -y
+  - export "PATH=${HOME}/.cargo/bin:${PATH}"
 script:
   - cargo test --verbose --all
   - cargo test --release --verbose --all
@@ -43,5 +65,4 @@ deploy:
   verbose: true
   on:
     branch: master
-    os: linux
-    condition: "$CHANNEL = nightly"
+    condition: "$RUSTUP_TOOLCHAIN = nightly-x86_64-unknown-linux-gnu"
