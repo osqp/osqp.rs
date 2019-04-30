@@ -12,3 +12,4 @@ links = "osqp"
 
 [build-dependencies]
 cmake = "0.1.28"
+cc = "1.0.36"
