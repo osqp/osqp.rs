@@ -185,9 +185,10 @@ impl Problem {
             };
 
             let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
+            let mut inner: *mut ffi::OSQPWorkspace = ptr::null_mut();
 
-            let inner = ffi::osqp_setup(&data, settings);
-            if inner.is_null() {
+            let status = ffi::osqp_setup(&mut inner, &data, settings);
+            if status != 0 {
                 return Err(SetupError::__Nonexhaustive);
             }
 

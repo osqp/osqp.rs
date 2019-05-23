@@ -18,7 +18,7 @@ pub enum OSQPTimer {}
 
 #[cfg(test)]
 mod tests {
-    use std::mem;
+    use std::{mem, ptr};
 
     use super::*;
 
@@ -44,10 +44,10 @@ mod tests {
 
     unsafe fn osqp_demo_rust_unsafe() {
         // Load problem data
-        let mut P_x: [c_float; 4] = [4.0, 1.0, 1.0, 2.0];
-        let P_nnz: c_int = 4;
-        let mut P_i: [c_int; 4] = [0, 1, 0, 1];
-        let mut P_p: [c_int; 3] = [0, 2, 4];
+        let mut P_x: [c_float; 3] = [4.0, 1.0, 2.0];
+        let P_nnz: c_int = 3;
+        let mut P_i: [c_int; 3] = [0, 0, 1];
+        let mut P_p: [c_int; 3] = [0, 1, 3];
         let mut q: [c_float; 2] = [1.0, 1.0];
         let mut A_x: [c_float; 4] = [1.0, 1.0, 1.0, 1.0];
         let A_nnz: c_int = 4;
@@ -95,7 +95,11 @@ mod tests {
         let settings = &mut settings as *mut OSQPSettings;
 
         // Setup workspace
-        let work: *mut OSQPWorkspace = osqp_setup(data, settings);
+        let mut work: *mut OSQPWorkspace = ptr::null_mut();
+        let status = osqp_setup(&mut work, data, settings);
+        if status != 0 {
+            panic!("osqp_setup failed");
+        }
 
         // Zero data and settings on the stack to ensure osqp does not reference them
         *(data as *mut OSQPData) = mem::zeroed();

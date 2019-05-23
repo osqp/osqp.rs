@@ -120,7 +120,7 @@ pub struct OSQPData {
     pub n: c_int,
     #[doc = "< number of constraints m"]
     pub m: c_int,
-    #[doc = "< quadratic part of the cost P in csc format (size n x n). It"]
+    #[doc = "< the upper triangular part of the quadratic cost matrix"]
     pub P: *mut csc,
     #[doc = "< linear constraints matrix A in csc format (size m x n)"]
     pub A: *mut csc,
@@ -168,7 +168,7 @@ pub struct OSQPSettings {
     pub polish: c_int,
     #[doc = "< iterative refinement steps in"]
     pub polish_refine_iter: c_int,
-    #[doc = "< boolean, write out progres"]
+    #[doc = "< boolean, write out progress"]
     pub verbose: c_int,
     #[doc = "< boolean, use scaled termination"]
     pub scaled_termination: c_int,
@@ -242,6 +242,8 @@ pub struct OSQPWorkspace {
     pub first_run: c_int,
     #[doc = " flag indicating whether the update_time should be cleared"]
     pub clear_update_time: c_int,
+    #[doc = " flag indicating that osqp_update_rho is called from osqp_solve function"]
+    pub rho_update_from_solve: c_int,
     #[doc = "< Has last summary been printed? (true/false)"]
     pub summary_printed: c_int,
 }
@@ -251,27 +253,18 @@ pub struct OSQPWorkspace {
 #[doc = "      on the choice"]
 #[repr(C)]
 pub struct linsys_solver {
-    #[doc = "< Linear system solver type (see type.h)"]
+    #[doc = "< Linear system solver type"]
     pub type_: linsys_solver_type,
     pub solve: ::std::option::Option<
-        unsafe extern "C" fn(
-            self_: *mut LinSysSolver,
-            b: *mut c_float,
-            settings: *const OSQPSettings,
-        ) -> c_int,
+        unsafe extern "C" fn(self_: *mut LinSysSolver, b: *mut c_float) -> c_int,
     >,
     #[doc = "< Free linear system solver"]
     pub free: ::std::option::Option<unsafe extern "C" fn(self_: *mut LinSysSolver)>,
     pub update_matrices: ::std::option::Option<
-        unsafe extern "C" fn(
-            self_: *mut LinSysSolver,
-            P: *const csc,
-            A: *const csc,
-            settings: *const OSQPSettings,
-        ) -> c_int,
+        unsafe extern "C" fn(s: *mut LinSysSolver, P: *const csc, A: *const csc) -> c_int,
     >,
     pub update_rho_vec: ::std::option::Option<
-        unsafe extern "C" fn(s: *mut LinSysSolver, rho_vec: *const c_float, m: c_int) -> c_int,
+        unsafe extern "C" fn(s: *mut LinSysSolver, rho_vec: *const c_float) -> c_int,
     >,
     #[doc = "< Number of threads active"]
     pub nthreads: c_int,
@@ -298,10 +291,15 @@ extern "C" {
     #[doc = " NB: This is the only function that allocates dynamic memory and is not used"]
     #[doc = "during code generation"]
     #[doc = ""]
+    #[doc = " @param  workp        Solver workspace pointer"]
     #[doc = " @param  data         Problem data"]
     #[doc = " @param  settings     Solver settings"]
-    #[doc = " @return              Solver environment"]
-    pub fn osqp_setup(data: *const OSQPData, settings: *mut OSQPSettings) -> *mut OSQPWorkspace;
+    #[doc = " @return              Exitflag for errors (0 if no errors)"]
+    pub fn osqp_setup(
+        workp: *mut *mut OSQPWorkspace,
+        data: *const OSQPData,
+        settings: *const OSQPSettings,
+    ) -> c_int;
 }
 extern "C" {
     #[doc = " Solve quadratic program"]
@@ -411,7 +409,7 @@ extern "C" {
     #[doc = ""]
     #[doc = ""]
     #[doc = "  If Ax_new_idx is OSQP_NULL, Ax_new is assumed to be as long as A->x"]
-    #[doc = "  and the whole P->x is replaced."]
+    #[doc = "  and the whole A->x is replaced."]
     #[doc = ""]
     #[doc = " @param  work       Workspace structure"]
     #[doc = " @param  Ax_new     Vector of new elements in A->x"]
@@ -436,7 +434,7 @@ extern "C" {
     #[doc = "  and the whole P->x is replaced."]
     #[doc = ""]
     #[doc = "  If Ax_new_idx is OSQP_NULL, Ax_new is assumed to be as long as A->x"]
-    #[doc = "  and the whole P->x is replaced."]
+    #[doc = "  and the whole A->x is replaced."]
     #[doc = ""]
     #[doc = " @param  work       Workspace structure"]
     #[doc = " @param  Px_new     Vector of new elements in P->x (upper triangular)"]
@@ -573,15 +571,22 @@ extern "C" {
     #[doc = " @return                 Exitflag"]
     pub fn osqp_update_time_limit(work: *mut OSQPWorkspace, time_limit_new: c_float) -> c_int;
 }
-pub const OSQP_DUAL_INFEASIBLE_INACCURATE: ffi_osqp_status = 4;
-pub const OSQP_PRIMAL_INFEASIBLE_INACCURATE: ffi_osqp_status = 3;
-pub const OSQP_SOLVED_INACCURATE: ffi_osqp_status = 2;
-pub const OSQP_SOLVED: ffi_osqp_status = 1;
-pub const OSQP_MAX_ITER_REACHED: ffi_osqp_status = -2;
-pub const OSQP_PRIMAL_INFEASIBLE: ffi_osqp_status = -3;
-pub const OSQP_DUAL_INFEASIBLE: ffi_osqp_status = -4;
-pub const OSQP_SIGINT: ffi_osqp_status = -5;
-pub const OSQP_TIME_LIMIT_REACHED: ffi_osqp_status = -6;
-pub const OSQP_NON_CVX: ffi_osqp_status = -7;
-pub const OSQP_UNSOLVED: ffi_osqp_status = -10;
-pub type ffi_osqp_status = i32;
+pub const OSQP_DATA_VALIDATION_ERROR: ffi_osqp_setup_status = 1;
+pub const OSQP_SETTINGS_VALIDATION_ERROR: ffi_osqp_setup_status = 2;
+pub const OSQP_MEMORY_ALLOCATION_ERROR: ffi_osqp_setup_status = 3;
+pub const OSQP_LOAD_LINSYS_SOLVER_ERROR: ffi_osqp_setup_status = 4;
+pub const OSQP_INIT_LINSYS_SOLVER_ERROR: ffi_osqp_setup_status = 5;
+pub const OSQP_INIT_LINSYS_SOLVER_NONCVX_ERROR: ffi_osqp_setup_status = 6;
+pub type ffi_osqp_setup_status = u32;
+pub const OSQP_DUAL_INFEASIBLE_INACCURATE: ffi_osqp_solve_status = 4;
+pub const OSQP_PRIMAL_INFEASIBLE_INACCURATE: ffi_osqp_solve_status = 3;
+pub const OSQP_SOLVED_INACCURATE: ffi_osqp_solve_status = 2;
+pub const OSQP_SOLVED: ffi_osqp_solve_status = 1;
+pub const OSQP_MAX_ITER_REACHED: ffi_osqp_solve_status = -2;
+pub const OSQP_PRIMAL_INFEASIBLE: ffi_osqp_solve_status = -3;
+pub const OSQP_DUAL_INFEASIBLE: ffi_osqp_solve_status = -4;
+pub const OSQP_SIGINT: ffi_osqp_solve_status = -5;
+pub const OSQP_TIME_LIMIT_REACHED: ffi_osqp_solve_status = -6;
+pub const OSQP_NON_CVX: ffi_osqp_solve_status = -7;
+pub const OSQP_UNSOLVED: ffi_osqp_solve_status = -10;
+pub type ffi_osqp_solve_status = i32;
