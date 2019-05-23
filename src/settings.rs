@@ -159,8 +159,8 @@ settings! {
     #[doc = "
     Sets the tolerance for adapting rho.
 
-    The new rho has to be `x` times larger or `1/x` times smaller than the current rho to trigger
-    a new factorization.
+    The new rho has to be `value` times larger or `1/value` times smaller than the current rho to
+    trigger a new factorization.
     "]
     adaptive_rho_tolerance: float,
 
