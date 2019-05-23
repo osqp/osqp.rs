@@ -88,9 +88,77 @@ impl<'a> CscMatrix<'a> {
         }
     }
 
-    pub(crate) unsafe fn to_ffi(&self) -> ffi::csc {
-        self.assert_valid();
+    /// Returns `true` if the matrix is structurally upper triangular.
+    ///
+    /// A matrix is structurally upper triangular if, for each column, all elements below the
+    /// diagonal, i.e. with their row number greater than their column number, are empty.
+    ///
+    /// Note that an element with an explicit value of zero is not empty. To be empty an element
+    /// must not be present in the sparse encoding of the matrix.
+    pub fn is_structurally_upper_tri(&self) -> bool {
+        for col in 0..self.indptr.len().saturating_sub(1) {
+            let col_data_start_idx = self.indptr[col];
+            let col_data_end_idx = self.indptr[col + 1];
 
+            for &row in &self.indices[col_data_start_idx..col_data_end_idx] {
+                if row > col {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    /// Extracts the upper triangular elements of the matrix.
+    ///
+    /// This operation performs no allocations if the matrix is already structurally upper
+    /// triangular or if it contains only owned data.
+    ///
+    /// The returned matrix is guaranteed to be structurally upper triangular.
+    pub fn into_upper_tri(self) -> CscMatrix<'a> {
+        if self.is_structurally_upper_tri() {
+            return self;
+        }
+
+        let mut indptr = self.indptr.into_owned();
+        let mut indices = self.indices.into_owned();
+        let mut data = self.data.into_owned();
+
+        let mut next_data_idx = 0;
+
+        for col in 0..indptr.len().saturating_sub(1) {
+            let col_start_idx = indptr[col];
+            let next_col_start_idx = indptr[col + 1];
+
+            indptr[col] = next_data_idx;
+
+            for data_idx in col_start_idx..next_col_start_idx {
+                let row = indices[data_idx];
+
+                if row <= col {
+                    data[next_data_idx] = data[data_idx];
+                    indices[next_data_idx] = row;
+                    next_data_idx += 1;
+                }
+            }
+        }
+
+        if let Some(data_len) = indptr.last_mut() {
+            *data_len = next_data_idx
+        }
+        indices.truncate(next_data_idx);
+        data.truncate(next_data_idx);
+
+        CscMatrix {
+            indptr: Cow::Owned(indptr),
+            indices: Cow::Owned(indices),
+            data: Cow::Owned(data),
+            ..self
+        }
+    }
+
+    pub(crate) unsafe fn to_ffi(&self) -> ffi::csc {
         // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed
         // integer of the same size as usize/isize.
         ffi::csc {
@@ -104,7 +172,7 @@ impl<'a> CscMatrix<'a> {
         }
     }
 
-    pub(crate) unsafe fn from_ffi(csc: *const ffi::csc) -> CscMatrix<'static> {
+    pub(crate) unsafe fn from_ffi<'b>(csc: *const ffi::csc) -> CscMatrix<'b> {
         let nrows = (*csc).m as usize;
         let ncols = (*csc).n as usize;
         let nnz = (*csc).nzmax as usize;
@@ -112,9 +180,9 @@ impl<'a> CscMatrix<'a> {
         CscMatrix {
             nrows,
             ncols,
-            indptr: slice::from_raw_parts((*csc).p as *const usize, ncols + 1).into(),
-            indices: slice::from_raw_parts((*csc).i as *const usize, nnz).into(),
-            data: slice::from_raw_parts((*csc).x as *const float, nnz).into(),
+            indptr: Cow::Borrowed(slice::from_raw_parts((*csc).p as *const usize, ncols + 1)),
+            indices: Cow::Borrowed(slice::from_raw_parts((*csc).i as *const usize, nnz)),
+            data: Cow::Borrowed(slice::from_raw_parts((*csc).x as *const float, nnz)),
         }
     }
 
@@ -124,39 +192,6 @@ impl<'a> CscMatrix<'a> {
         assert_eq!(&*self.indptr, &*other.indptr);
         assert_eq!(&*self.indices, &*other.indices);
         assert_eq!(self.data.len(), other.data.len());
-    }
-
-    /// Assert `other` has the same upper triangle sparsity structure as `self`
-    pub(crate) fn assert_same_upper_tri_sparsity_structure(&self, other: &CscMatrix) {
-        assert_eq!(self.nrows, other.nrows);
-        assert_eq!(self.ncols, other.ncols);
-        assert_eq!(self.indptr.len(), other.indptr.len());
-        assert_eq!(other.indices.len(), other.data.len());
-
-        let mut col_start_idx = 0;
-        let mut other_col_start_idx = 0;
-        for (col_num, (&col_end_idx, &other_col_end_idx)) in self
-            .indptr
-            .iter()
-            .zip(other.indptr.iter())
-            .skip(1)
-            .enumerate()
-        {
-            assert!(self.indices[col_start_idx..col_end_idx]
-                .iter()
-                .chain(iter::once(&(self.nrows + 1)))
-                .zip(
-                    other.indices[other_col_start_idx..other_col_end_idx]
-                        .iter()
-                        .chain(iter::once(&(self.nrows + 1)))
-                )
-                .take_while(
-                    |&(&row_num, &other_row_num)| row_num <= col_num || other_row_num <= col_num
-                )
-                .all(|(&row_num, &other_row_num)| row_num == other_row_num));
-            col_start_idx = col_end_idx;
-            other_col_start_idx = other_col_end_idx;
-        }
     }
 
     pub(crate) fn assert_valid(&self) {
@@ -169,8 +204,8 @@ impl<'a> CscMatrix<'a> {
         assert!(self.data.len() <= max_idx);
 
         // Check row pointers
-        assert_eq!(self.indptr[self.ncols], self.data.len());
         assert_eq!(self.indptr.len(), self.ncols + 1);
+        assert_eq!(self.indptr[self.ncols], self.data.len());
         self.indptr.iter().fold(0, |acc, i| {
             assert!(
                 *i >= acc,
@@ -338,17 +373,28 @@ mod tests {
     }
 
     #[test]
-    fn same_upper_tri_sparsity_structure_ok() {
-        let mat1: CscMatrix = (&[[1.0, 2.0, 0.0], [3.0, 0.0, 5.0], [0.0, 6.0, 0.0]]).into();
-        let mat2: CscMatrix = (&[[7.0, 2.0, 0.0], [9.0, 0.0, 5.0], [7.0, 10.0, 0.0]]).into();
-        mat1.assert_same_upper_tri_sparsity_structure(&mat2);
+    fn is_structurally_upper_tri() {
+        let structurally_upper_tri: CscMatrix =
+            (&[[1.0, 0.0, 5.0], [0.0, 3.0, 4.0], [0.0, 0.0, 2.0]]).into();
+        let numerically_upper_tri: CscMatrix = CscMatrix::from_row_iter_dense(
+            3,
+            3,
+            [1.0, 0.0, 5.0, 0.0, 3.0, 4.0, 0.0, 0.0, 2.0]
+                .iter()
+                .cloned(),
+        );
+        let not_upper_tri: CscMatrix =
+            (&[[7.0, 2.0, 0.0], [9.0, 0.0, 5.0], [7.0, 10.0, 0.0]]).into();
+        assert!(structurally_upper_tri.is_structurally_upper_tri());
+        assert!(!numerically_upper_tri.is_structurally_upper_tri());
+        assert!(!not_upper_tri.is_structurally_upper_tri());
     }
 
     #[test]
-    #[should_panic]
-    fn different_upper_tri_sparsity_structure_panics() {
-        let mat1: CscMatrix = (&[[1.0, 2.0, 0.0], [3.0, 0.0, 0.0], [0.0, 5.0, 6.0]]).into();
-        let mat2: CscMatrix = (&[[7.0, 8.0, 0.0], [9.0, 0.0, 0.0], [0.0, 10.0, 0.0]]).into();
-        mat1.assert_same_upper_tri_sparsity_structure(&mat2);
+    fn into_upper_tri() {
+        let mat: CscMatrix = (&[[1.0, 0.0, 5.0], [7.0, 3.0, 4.0], [6.0, 0.0, 2.0]]).into();
+        let mat_upper_tri: CscMatrix =
+            (&[[1.0, 0.0, 5.0], [0.0, 3.0, 4.0], [0.0, 0.0, 2.0]]).into();
+        assert_eq!(mat.into_upper_tri(), mat_upper_tri);
     }
 }

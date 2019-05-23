@@ -1,6 +1,7 @@
 Unreleased
 -----------
 - Add `CscMatrix::from_column_iter_dense` and `CscMatrix::from_row_iter_dense` to construct a dense CscMatrix with elements filled from column-major and row-major iterators.
+- `Problem` now requires the `P` matrix to be structurally upper triangular. Two methods on `CscMatrix`, `is_structurally_upper_tri` and `into_upper_tri`, are added to assist with this requirement.
 
 Version 0.5.0 (December 10, 2018)
 -----------

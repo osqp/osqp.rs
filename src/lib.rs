@@ -30,7 +30,7 @@
 //! </div>
 //!
 //! ```rust
-//! use osqp::{Settings, Problem};
+//! use osqp::{CscMatrix, Problem, Settings};
 //!
 //! // Define problem data
 //! let P = &[[4.0, 1.0],
@@ -41,6 +41,9 @@
 //!           [0.0, 1.0]];
 //! let l = &[1.0, 0.0, 0.0];
 //! let u = &[1.0, 0.7, 0.7];
+//!
+//! // Extract the upper triangular elements of `P`
+//! let P = CscMatrix::from(P).into_upper_tri();
 //!
 //! // Change the default alpha and disable verbose output
 //! let settings = Settings::default()
@@ -120,8 +123,6 @@ pub struct Problem {
     n: usize,
     /// Number of constraints
     m: usize,
-    /// P upper triangle CSC data
-    P_upper_tri_data: Vec<float>,
 }
 
 impl Problem {
@@ -129,8 +130,8 @@ impl Problem {
     ///
     /// Returns an error if the problem is non-convex or the solver cannot be initialised.
     ///
-    /// Panics if any of the matrix or vector dimensions are incompatible or if either of the CSC
-    /// matrices is not valid.
+    /// Panics if any of the matrix or vector dimensions are incompatible, if `P` or `A` are not
+    /// valid CSC matrices, or if `P` is not structurally upper triangular.
     #[allow(non_snake_case)]
     pub fn new<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
         P: T,
@@ -169,6 +170,14 @@ impl Problem {
             assert_eq!(m, l.len(), "l must have the same number of rows as A");
             assert_eq!(m, u.len(), "u must have the same number of rows as A");
 
+            // `A` and `P` must be valid CSC matrices and `P` must be structurally upper triangular
+            P.assert_valid();
+            A.assert_valid();
+            assert!(
+                P.is_structurally_upper_tri(),
+                "P must be structurally upper triangular"
+            );
+
             // csc_to_ffi ensures sparse matrices have valid structure and that indices do not
             // exceed isize::MAX
             let mut P_ffi = P.to_ffi();
@@ -192,12 +201,7 @@ impl Problem {
                 return Err(SetupError::__Nonexhaustive);
             }
 
-            Ok(Problem {
-                inner,
-                n,
-                m,
-                P_upper_tri_data: Vec::with_capacity((P.data.len() + n + 1) / 2),
-            })
+            Ok(Problem { inner, n, m })
         }
     }
 
@@ -301,18 +305,16 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_P_inner(&mut self, P: CscMatrix) {
         unsafe {
-            P.assert_valid();
             let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
-            P.assert_same_upper_tri_sparsity_structure(&P_ffi);
+            P.assert_same_sparsity_structure(&P_ffi);
 
-            self.fill_P_upper_tri_data(P);
             check!(
                 update_P,
                 ffi::osqp_update_P(
                     self.inner,
-                    self.P_upper_tri_data.as_ptr(),
+                    P.data.as_ptr(),
                     ptr::null(),
-                    self.P_upper_tri_data.len() as ffi::osqp_int,
+                    P.data.len() as ffi::osqp_int,
                 )
             );
         }
@@ -330,7 +332,6 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_A_inner(&mut self, A: CscMatrix) {
         unsafe {
-            A.assert_valid();
             let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
             A.assert_same_sparsity_structure(&A_ffi);
 
@@ -362,45 +363,24 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_P_A_inner(&mut self, P: CscMatrix, A: CscMatrix) {
         unsafe {
-            P.assert_valid();
             let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
-            P.assert_same_upper_tri_sparsity_structure(&P_ffi);
+            P.assert_same_sparsity_structure(&P_ffi);
 
-            A.assert_valid();
             let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
             A.assert_same_sparsity_structure(&A_ffi);
 
-            self.fill_P_upper_tri_data(P);
             check!(
                 update_P_A,
                 ffi::osqp_update_P_A(
                     self.inner,
-                    self.P_upper_tri_data.as_ptr(),
+                    P.data.as_ptr(),
                     ptr::null(),
-                    self.P_upper_tri_data.len() as ffi::osqp_int,
+                    P.data.len() as ffi::osqp_int,
                     A.data.as_ptr(),
                     ptr::null(),
                     A.data.len() as ffi::osqp_int,
                 )
             );
-        }
-    }
-
-    /// Copies the upper triangular elements of P to self.P_upper_tri_data.
-    #[allow(non_snake_case)]
-    fn fill_P_upper_tri_data(&mut self, P: CscMatrix) {
-        self.P_upper_tri_data.truncate(0);
-
-        let mut col_start_idx = 0;
-        for (col_num, &col_end_idx) in P.indptr.iter().skip(1).enumerate() {
-            for (row_idx, &row_num) in P.indices[col_start_idx..col_end_idx].iter().enumerate() {
-                // Copy only the diagonal and all elements above it
-                if row_num > col_num {
-                    break;
-                }
-                self.P_upper_tri_data.push(P.data[col_start_idx + row_idx]);
-            }
-            col_start_idx = col_end_idx;
         }
     }
 
@@ -432,10 +412,10 @@ mod tests {
     #[allow(non_snake_case)]
     fn update_matrices() {
         // Define problem data
-        let P_wrong = &[[2.0, 1.0], [1.0, 4.0]];
+        let P_wrong = CscMatrix::from(&[[2.0, 1.0], [1.0, 4.0]]).into_upper_tri();
         let A_wrong = &[[2.0, 3.0], [1.0, 0.0], [0.0, 9.0]];
 
-        let P = &[[4.0, 1.0], [1.0, 2.0]];
+        let P = CscMatrix::from(&[[4.0, 1.0], [1.0, 2.0]]).into_upper_tri();
         let q = &[1.0, 1.0];
         let A = &[[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]];
         let l = &[1.0, 0.0, 0.0];
@@ -446,8 +426,8 @@ mod tests {
         let settings = settings.adaptive_rho(false);
 
         // Check updating P and A together
-        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings).unwrap();
-        prob.update_P_A(P, A);
+        let mut prob = Problem::new(&P_wrong, q, A_wrong, l, u, &settings).unwrap();
+        prob.update_P_A(&P, A);
         let result = prob.solve();
         let x = result.solution().unwrap().x();
         let expected = &[0.2987710845986426, 0.701227995544065];
@@ -455,8 +435,8 @@ mod tests {
         assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
 
         // Check updating P and A separately
-        let mut prob = Problem::new(P_wrong, q, A_wrong, l, u, &settings).unwrap();
-        prob.update_P(P);
+        let mut prob = Problem::new(&P_wrong, q, A_wrong, l, u, &settings).unwrap();
+        prob.update_P(&P);
         prob.update_A(A);
         let result = prob.solve();
         let x = result.solution().unwrap().x();
