@@ -201,6 +201,8 @@ impl Problem {
     }
 
     /// Sets the linear part of the cost function to `q`.
+    ///
+    /// Panics if the length of `q` is not the same as the number of problem variables.
     pub fn update_lin_cost(&mut self, q: &[float]) {
         unsafe {
             assert_eq!(self.n, q.len());
@@ -212,6 +214,8 @@ impl Problem {
     }
 
     /// Sets the lower and upper bounds of the constraints to `l` and `u`.
+    ///
+    /// Panics if the length of `l` or `u` is not the same as the number of problem constraints.
     pub fn update_bounds(&mut self, l: &[float], u: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
@@ -224,6 +228,8 @@ impl Problem {
     }
 
     /// Sets the lower bound of the constraints to `l`.
+    ///
+    /// Panics if the length of `l` is not the same as the number of problem constraints.
     pub fn update_lower_bound(&mut self, l: &[float]) {
         unsafe {
             assert_eq!(self.m, l.len());
@@ -235,6 +241,8 @@ impl Problem {
     }
 
     /// Sets the upper bound of the constraints to `u`.
+    ///
+    /// Panics if the length of `u` is not the same as the number of problem constraints.
     pub fn update_upper_bound(&mut self, u: &[float]) {
         unsafe {
             assert_eq!(self.m, u.len());
@@ -246,6 +254,9 @@ impl Problem {
     }
 
     /// Warm starts the primal variables at `x` and the dual variables at `y`.
+    ///
+    /// Panics if the length of `x` is not the same as the number of problem variables or the
+    /// length of `y` is not the same as the number of problem constraints.
     pub fn warm_start(&mut self, x: &[float], y: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
@@ -258,6 +269,8 @@ impl Problem {
     }
 
     /// Warm starts the primal variables at `x`.
+    ///
+    /// Panics if the length of `x` is not the same as the number of problem variables.
     pub fn warm_start_x(&mut self, x: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
@@ -266,6 +279,8 @@ impl Problem {
     }
 
     /// Warms start the dual variables at `y`.
+    ///
+    /// Panics if the length of `y` is not the same as the number of problem constraints.
     pub fn warm_start_y(&mut self, y: &[float]) {
         unsafe {
             assert_eq!(self.m, y.len());
@@ -274,6 +289,9 @@ impl Problem {
     }
 
     /// Updates the elements of matrix `P` without changing its sparsity structure.
+    ///
+    /// Panics if the sparsity structure of `P` differs from the sparsity structure of the `P`
+    /// matrix provided to `Problem::new`.
     #[allow(non_snake_case)]
     pub fn update_P<'a, T: Into<CscMatrix<'a>>>(&mut self, P: T) {
         self.update_P_inner(P.into());
@@ -300,6 +318,9 @@ impl Problem {
     }
 
     /// Updates the elements of matrix `A` without changing its sparsity structure.
+    ///
+    /// Panics if the sparsity structure of `A` differs from the sparsity structure of the `A`
+    /// matrix provided to `Problem::new`.
     #[allow(non_snake_case)]
     pub fn update_A<'a, T: Into<CscMatrix<'a>>>(&mut self, A: T) {
         self.update_A_inner(A.into());
@@ -325,6 +346,9 @@ impl Problem {
     }
 
     /// Updates the elements of matrices `P` and `A` without changing either's sparsity structure.
+    ///
+    /// Panics if the sparsity structure of `P` or `A` differs from the sparsity structure of the
+    /// `P` or `A` matrices provided to `Problem::new`.
     #[allow(non_snake_case)]
     pub fn update_P_A<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
         &mut self,
