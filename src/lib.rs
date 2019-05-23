@@ -171,8 +171,8 @@ impl Problem {
             assert_eq!(m, u.len(), "u must have the same number of rows as A");
 
             // `A` and `P` must be valid CSC matrices and `P` must be structurally upper triangular
-            P.assert_valid();
-            A.assert_valid();
+            assert!(P.is_valid(), "P must be a valid CSC matrix");
+            assert!(A.is_valid(), "A must be a valid CSC matrix");
             assert!(
                 P.is_structurally_upper_tri(),
                 "P must be structurally upper triangular"

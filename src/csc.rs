@@ -5,6 +5,14 @@ use std::slice;
 
 use float;
 
+macro_rules! check {
+    ($check:expr) => {
+        if !{ $check } {
+            return false;
+        }
+    };
+}
+
 /// A matrix in Compressed Sparse Column format.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CscMatrix<'a> {
@@ -194,41 +202,42 @@ impl<'a> CscMatrix<'a> {
         assert_eq!(self.data.len(), other.data.len());
     }
 
-    pub(crate) fn assert_valid(&self) {
-        use std::isize::MAX;
-        let max_idx = MAX as usize;
-        assert!(self.nrows <= max_idx);
-        assert!(self.ncols <= max_idx);
-        assert!(self.indptr.len() <= max_idx);
-        assert!(self.indices.len() <= max_idx);
-        assert!(self.data.len() <= max_idx);
+    pub(crate) fn is_valid(&self) -> bool {
+        let max_idx = isize::max_value() as usize;
+        check!(self.nrows <= max_idx);
+        check!(self.ncols <= max_idx);
+        check!(self.indptr.len() <= max_idx);
+        check!(self.indices.len() <= max_idx);
+        check!(self.data.len() <= max_idx);
 
         // Check row pointers
-        assert_eq!(self.indptr.len(), self.ncols + 1);
-        assert_eq!(self.indptr[self.ncols], self.data.len());
-        self.indptr.iter().fold(0, |acc, i| {
-            assert!(
-                *i >= acc,
-                "csc row pointers must be monotonically nondecreasing"
-            );
-            *i
-        });
+        check!(self.indptr.len() == self.ncols + 1);
+        check!(self.indptr[self.ncols] == self.data.len());
+        let mut prev_row_idx = 0;
+        for &row_idx in self.indptr.iter() {
+            // Row pointers must be monotonically nondecreasing
+            check!(row_idx >= prev_row_idx);
+            prev_row_idx = row_idx;
+        }
 
         // Check index values
-        assert_eq!(
-            self.data.len(),
-            self.indices.len(),
-            "csc row indices must be the same length as data"
-        );
-        assert!(self.indices.iter().all(|r| *r < self.nrows));
+        check!(self.data.len() == self.indices.len());
+        check!(self.indices.iter().all(|r| *r < self.nrows));
         for i in 0..self.ncols {
             let row_indices = &self.indices[self.indptr[i] as usize..self.indptr[i + 1] as usize];
-            let first_index = *row_indices.get(0).unwrap_or(&0);
-            row_indices.iter().skip(1).fold(first_index, |acc, i| {
-                assert!(*i > acc, "csc row indices must be monotonically increasing");
-                *i
-            });
+            let mut row_indices = row_indices.iter();
+            if let Some(&first_row) = row_indices.next() {
+                let mut prev_row = first_row;
+                for &row in row_indices {
+                    // Row indices within each column must be monotonically increasing
+                    check!(row > prev_row);
+                    prev_row = row;
+                }
+                check!(prev_row < self.nrows);
+            }
         }
+
+        true
     }
 }
 
