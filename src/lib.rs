@@ -118,7 +118,7 @@ pub enum SetupError {
 /// An instance of the OSQP solver.
 #[allow(non_snake_case)]
 pub struct Problem {
-    inner: *mut ffi::OSQPWorkspace,
+    workspace: *mut ffi::OSQPWorkspace,
     /// Number of variables
     n: usize,
     /// Number of constraints
@@ -194,14 +194,14 @@ impl Problem {
             };
 
             let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
-            let mut inner: *mut ffi::OSQPWorkspace = ptr::null_mut();
+            let mut workspace: *mut ffi::OSQPWorkspace = ptr::null_mut();
 
-            let status = ffi::osqp_setup(&mut inner, &data, settings);
+            let status = ffi::osqp_setup(&mut workspace, &data, settings);
             if status != 0 {
                 return Err(SetupError::__Nonexhaustive);
             }
 
-            Ok(Problem { inner, n, m })
+            Ok(Problem { workspace, n, m })
         }
     }
 
@@ -213,7 +213,7 @@ impl Problem {
             assert_eq!(self.n, q.len());
             check!(
                 update_lin_cost,
-                ffi::osqp_update_lin_cost(self.inner, q.as_ptr())
+                ffi::osqp_update_lin_cost(self.workspace, q.as_ptr())
             );
         }
     }
@@ -227,7 +227,7 @@ impl Problem {
             assert_eq!(self.m, u.len());
             check!(
                 update_bounds,
-                ffi::osqp_update_bounds(self.inner, l.as_ptr(), u.as_ptr())
+                ffi::osqp_update_bounds(self.workspace, l.as_ptr(), u.as_ptr())
             );
         }
     }
@@ -240,7 +240,7 @@ impl Problem {
             assert_eq!(self.m, l.len());
             check!(
                 update_lower_bound,
-                ffi::osqp_update_lower_bound(self.inner, l.as_ptr())
+                ffi::osqp_update_lower_bound(self.workspace, l.as_ptr())
             );
         }
     }
@@ -253,7 +253,7 @@ impl Problem {
             assert_eq!(self.m, u.len());
             check!(
                 update_upper_bound,
-                ffi::osqp_update_upper_bound(self.inner, u.as_ptr())
+                ffi::osqp_update_upper_bound(self.workspace, u.as_ptr())
             );
         }
     }
@@ -268,7 +268,7 @@ impl Problem {
             assert_eq!(self.m, y.len());
             check!(
                 warm_start,
-                ffi::osqp_warm_start(self.inner, x.as_ptr(), y.as_ptr())
+                ffi::osqp_warm_start(self.workspace, x.as_ptr(), y.as_ptr())
             );
         }
     }
@@ -279,7 +279,10 @@ impl Problem {
     pub fn warm_start_x(&mut self, x: &[float]) {
         unsafe {
             assert_eq!(self.n, x.len());
-            check!(warm_start_x, ffi::osqp_warm_start_x(self.inner, x.as_ptr()));
+            check!(
+                warm_start_x,
+                ffi::osqp_warm_start_x(self.workspace, x.as_ptr())
+            );
         }
     }
 
@@ -289,7 +292,10 @@ impl Problem {
     pub fn warm_start_y(&mut self, y: &[float]) {
         unsafe {
             assert_eq!(self.m, y.len());
-            check!(warm_start_y, ffi::osqp_warm_start_y(self.inner, y.as_ptr()));
+            check!(
+                warm_start_y,
+                ffi::osqp_warm_start_y(self.workspace, y.as_ptr())
+            );
         }
     }
 
@@ -305,13 +311,13 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_P_inner(&mut self, P: CscMatrix) {
         unsafe {
-            let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
+            let P_ffi = CscMatrix::from_ffi((*(*self.workspace).data).P);
             P.assert_same_sparsity_structure(&P_ffi);
 
             check!(
                 update_P,
                 ffi::osqp_update_P(
-                    self.inner,
+                    self.workspace,
                     P.data.as_ptr(),
                     ptr::null(),
                     P.data.len() as ffi::osqp_int,
@@ -332,13 +338,13 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_A_inner(&mut self, A: CscMatrix) {
         unsafe {
-            let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
+            let A_ffi = CscMatrix::from_ffi((*(*self.workspace).data).A);
             A.assert_same_sparsity_structure(&A_ffi);
 
             check!(
                 update_A,
                 ffi::osqp_update_A(
-                    self.inner,
+                    self.workspace,
                     A.data.as_ptr(),
                     ptr::null(),
                     A.data.len() as ffi::osqp_int,
@@ -363,16 +369,16 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_P_A_inner(&mut self, P: CscMatrix, A: CscMatrix) {
         unsafe {
-            let P_ffi = CscMatrix::from_ffi((*(*self.inner).data).P);
+            let P_ffi = CscMatrix::from_ffi((*(*self.workspace).data).P);
             P.assert_same_sparsity_structure(&P_ffi);
 
-            let A_ffi = CscMatrix::from_ffi((*(*self.inner).data).A);
+            let A_ffi = CscMatrix::from_ffi((*(*self.workspace).data).A);
             A.assert_same_sparsity_structure(&A_ffi);
 
             check!(
                 update_P_A,
                 ffi::osqp_update_P_A(
-                    self.inner,
+                    self.workspace,
                     P.data.as_ptr(),
                     ptr::null(),
                     P.data.len() as ffi::osqp_int,
@@ -387,7 +393,7 @@ impl Problem {
     /// Attempts to solve the quadratic program.
     pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
-            check!(solve, ffi::osqp_solve(self.inner));
+            check!(solve, ffi::osqp_solve(self.workspace));
             Status::from_problem(self)
         }
     }
@@ -396,7 +402,7 @@ impl Problem {
 impl Drop for Problem {
     fn drop(&mut self) {
         unsafe {
-            ffi::osqp_cleanup(self.inner);
+            ffi::osqp_cleanup(self.workspace);
         }
     }
 }

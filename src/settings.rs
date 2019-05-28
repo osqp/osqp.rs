@@ -113,7 +113,7 @@ macro_rules! settings {
                 pub fn $update_name(&mut self, value: rust_type!($typ)) {
                     unsafe {
                         let ret = ffi::$update_ffi(
-                            self.inner,
+                            self.workspace,
                             convert_rust_type!($name, $typ, value)
                         );
                         if ret != 0 {

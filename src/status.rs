@@ -61,7 +61,7 @@ impl<'a> Status<'a> {
     pub(crate) fn from_problem(prob: &'a Problem) -> Status<'a> {
         use std::os::raw::c_int;
         unsafe {
-            match (*(*prob.inner).info).status_val as c_int {
+            match (*(*prob.workspace).info).status_val as c_int {
                 ffi::OSQP_SOLVED => Status::Solved(Solution { prob }),
                 ffi::OSQP_SOLVED_INACCURATE => Status::SolvedInaccurate(Solution { prob }),
                 ffi::OSQP_MAX_ITER_REACHED => Status::MaxIterationsReached(Solution { prob }),
@@ -101,43 +101,43 @@ impl<'a> Status<'a> {
     pub fn iter(&self) -> u32 {
         unsafe {
             // cast safe as more than 2 billion iterations would be unreasonable
-            (*(*self.prob().inner).info).iter as u32
+            (*(*self.prob().workspace).info).iter as u32
         }
     }
 
     /// Returns the time taken for the setup phase.
     pub fn setup_time(&self) -> Duration {
-        unsafe { secs_to_duration((*(*self.prob().inner).info).setup_time) }
+        unsafe { secs_to_duration((*(*self.prob().workspace).info).setup_time) }
     }
 
     /// Returns the time taken for the solve phase.
     pub fn solve_time(&self) -> Duration {
-        unsafe { secs_to_duration((*(*self.prob().inner).info).solve_time) }
+        unsafe { secs_to_duration((*(*self.prob().workspace).info).solve_time) }
     }
 
     /// Returns the time taken for the polish phase.
     pub fn polish_time(&self) -> Duration {
-        unsafe { secs_to_duration((*(*self.prob().inner).info).polish_time) }
+        unsafe { secs_to_duration((*(*self.prob().workspace).info).polish_time) }
     }
 
     /// Returns the total time taken by the solver.
     ///
     /// This includes the time taken for the setup phase on the first solve.
     pub fn run_time(&self) -> Duration {
-        unsafe { secs_to_duration((*(*self.prob().inner).info).run_time) }
+        unsafe { secs_to_duration((*(*self.prob().workspace).info).run_time) }
     }
 
     /// Returns the number of rho updates.
     pub fn rho_updates(&self) -> u32 {
         unsafe {
             // cast safe as more than 2 billion updates would be unreasonable
-            (*(*self.prob().inner).info).rho_updates as u32
+            (*(*self.prob().workspace).info).rho_updates as u32
         }
     }
 
     /// Returns the current best estimate of rho.
     pub fn rho_estimate(&self) -> float {
-        unsafe { (*(*self.prob().inner).info).rho_estimate }
+        unsafe { (*(*self.prob().workspace).info).rho_estimate }
     }
 
     fn prob(&self) -> &'a Problem {
@@ -161,20 +161,20 @@ impl<'a> Status<'a> {
 impl<'a> Solution<'a> {
     /// Returns the primal variables at the solution.
     pub fn x(&self) -> &'a [float] {
-        unsafe { slice::from_raw_parts((*(*self.prob.inner).solution).x, self.prob.n) }
+        unsafe { slice::from_raw_parts((*(*self.prob.workspace).solution).x, self.prob.n) }
     }
 
     /// Returns the dual variables at the solution.
     ///
     /// These are the Lagrange multipliers of the constraints `l <= Ax <= u`.
     pub fn y(&self) -> &'a [float] {
-        unsafe { slice::from_raw_parts((*(*self.prob.inner).solution).y, self.prob.m) }
+        unsafe { slice::from_raw_parts((*(*self.prob.workspace).solution).y, self.prob.m) }
     }
 
     /// Returns the status of the polish operation.
     pub fn polish_status(&self) -> PolishStatus {
         unsafe {
-            match (*(*self.prob.inner).info).status_polish {
+            match (*(*self.prob.workspace).info).status_polish {
                 1 => PolishStatus::Successful,
                 -1 => PolishStatus::Unsuccessful,
                 0 => PolishStatus::Unperformed,
@@ -185,17 +185,17 @@ impl<'a> Solution<'a> {
 
     /// Returns the primal objective value.
     pub fn obj_val(&self) -> float {
-        unsafe { (*(*self.prob.inner).info).obj_val }
+        unsafe { (*(*self.prob.workspace).info).obj_val }
     }
 
     /// Returns the norm of primal residual.
     pub fn pri_res(&self) -> float {
-        unsafe { (*(*self.prob.inner).info).pri_res }
+        unsafe { (*(*self.prob.workspace).info).pri_res }
     }
 
     /// Returns the norm of dual residual.
     pub fn dua_res(&self) -> float {
-        unsafe { (*(*self.prob.inner).info).dua_res }
+        unsafe { (*(*self.prob.workspace).info).dua_res }
     }
 }
 
@@ -219,7 +219,7 @@ impl<'a> PrimalInfeasibilityCertificate<'a> {
     /// multipliers for convex
     /// optimization](http://www.optimization-online.org/DB_HTML/2017/06/6058.html).
     pub fn delta_y(&self) -> &'a [float] {
-        unsafe { slice::from_raw_parts((*self.prob.inner).delta_y, self.prob.m) }
+        unsafe { slice::from_raw_parts((*self.prob.workspace).delta_y, self.prob.m) }
     }
 }
 
@@ -238,7 +238,7 @@ impl<'a> DualInfeasibilityCertificate<'a> {
     /// multipliers for convex
     /// optimization](http://www.optimization-online.org/DB_HTML/2017/06/6058.html).
     pub fn delta_x(&self) -> &'a [float] {
-        unsafe { slice::from_raw_parts((*self.prob.inner).delta_x, self.prob.n) }
+        unsafe { slice::from_raw_parts((*self.prob.workspace).delta_x, self.prob.n) }
     }
 }
 
