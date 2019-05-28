@@ -123,7 +123,6 @@ pub enum SetupError {
 }
 
 /// An instance of the OSQP solver.
-#[allow(non_snake_case)]
 pub struct Problem {
     workspace: *mut ffi::OSQPWorkspace,
     /// Number of variables
