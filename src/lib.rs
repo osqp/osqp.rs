@@ -198,6 +198,10 @@ impl Problem {
 
             let status = ffi::osqp_setup(&mut workspace, &data, settings);
             if status != 0 {
+                // If the call to `osqp_setup` fails the `OSQPWorkspace` may be partially allocated
+                if !workspace.is_null() {
+                    ffi::osqp_cleanup(workspace);
+                }
                 return Err(SetupError::__Nonexhaustive);
             }
 
