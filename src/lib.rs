@@ -70,7 +70,8 @@
 extern crate osqp_sys;
 
 use osqp_sys as ffi;
-use std::ptr;
+use std::io::Write;
+use std::{io, ptr};
 
 mod csc;
 pub use csc::CscMatrix;
@@ -110,6 +111,12 @@ macro_rules! check {
 /// enum should be ignored.
 #[derive(Debug)]
 pub enum SetupError {
+    InvalidData,
+    InvalidSettings,
+    MemoryAllocationFailed,
+    LoadLinsysSolverFailed,
+    InitLinsysSolverFailed,
+    NonConvex,
     // Prevent exhaustive enum matching
     #[doc(hidden)]
     __Nonexhaustive,
@@ -154,6 +161,14 @@ impl Problem {
         u: &[float],
         settings: &Settings,
     ) -> Result<Problem, SetupError> {
+        let invalid_data = |msg| {
+            if settings.inner.verbose != 0 {
+                let stderr = io::stderr();
+                let _ = writeln!(stderr.lock(), "{}", msg);
+            }
+            Err(SetupError::InvalidData)
+        };
+
         unsafe {
             // Ensure the provided data is valid. While OSQP internally performs some validity
             // checks it can be made to read outside the provided buffers so all the invariants
@@ -161,22 +176,38 @@ impl Problem {
 
             // Dimensions must be consistent with the number of variables
             let n = P.nrows;
-            assert_eq!(n, P.ncols, "P must be a square matrix");
-            assert_eq!(n, q.len(), "q must be the same number of rows as P");
-            assert_eq!(n, A.ncols, "A must have the same number of columns as P");
+            if P.ncols != n {
+                return invalid_data("P must be a square matrix");
+            }
+            if q.len() != n {
+                return invalid_data("q must be the same number of rows as P");
+            }
+            if A.ncols != n {
+                return invalid_data("A must have the same number of columns as P");
+            }
 
             // Dimensions must be consistent with the number of constraints
             let m = A.nrows;
-            assert_eq!(m, l.len(), "l must have the same number of rows as A");
-            assert_eq!(m, u.len(), "u must have the same number of rows as A");
+            if l.len() != m {
+                return invalid_data("l must have the same number of rows as A");
+            }
+            if u.len() != m {
+                return invalid_data("u must have the same number of rows as A");
+            }
+            if l.iter().zip(u.iter()).any(|(&l, &u)| !(l <= u)) {
+                return invalid_data("all elements of l must be less than or equal to the corresponding element of u");
+            }
 
             // `A` and `P` must be valid CSC matrices and `P` must be structurally upper triangular
-            assert!(P.is_valid(), "P must be a valid CSC matrix");
-            assert!(A.is_valid(), "A must be a valid CSC matrix");
-            assert!(
-                P.is_structurally_upper_tri(),
-                "P must be structurally upper triangular"
-            );
+            if !P.is_valid() {
+                return invalid_data("P must be a valid CSC matrix");
+            }
+            if !A.is_valid() {
+                return invalid_data("A must be a valid CSC matrix");
+            }
+            if !P.is_structurally_upper_tri() {
+                return invalid_data("P must be structurally upper triangular");
+            }
 
             // csc_to_ffi ensures sparse matrices have valid structure and that indices do not
             // exceed isize::MAX
@@ -197,15 +228,22 @@ impl Problem {
             let mut workspace: *mut ffi::OSQPWorkspace = ptr::null_mut();
 
             let status = ffi::osqp_setup(&mut workspace, &data, settings);
-            if status != 0 {
-                // If the call to `osqp_setup` fails the `OSQPWorkspace` may be partially allocated
-                if !workspace.is_null() {
-                    ffi::osqp_cleanup(workspace);
-                }
-                return Err(SetupError::__Nonexhaustive);
-            }
+            let err = match status as ffi::ffi_osqp_setup_status {
+                0 => return Ok(Problem { workspace, n, m }),
+                ffi::OSQP_DATA_VALIDATION_ERROR => SetupError::InvalidData,
+                ffi::OSQP_SETTINGS_VALIDATION_ERROR => SetupError::InvalidSettings,
+                ffi::OSQP_MEMORY_ALLOCATION_ERROR => SetupError::MemoryAllocationFailed,
+                ffi::OSQP_LOAD_LINSYS_SOLVER_ERROR => SetupError::LoadLinsysSolverFailed,
+                ffi::OSQP_INIT_LINSYS_SOLVER_ERROR => SetupError::InitLinsysSolverFailed,
+                ffi::OSQP_INIT_LINSYS_SOLVER_NONCVX_ERROR => SetupError::NonConvex,
+                _ => unreachable!(),
+            };
 
-            Ok(Problem { workspace, n, m })
+            // If the call to `osqp_setup` fails the `OSQPWorkspace` may be partially allocated
+            if !workspace.is_null() {
+                ffi::osqp_cleanup(workspace);
+            }
+            Err(err)
         }
     }
 
