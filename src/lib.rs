@@ -70,8 +70,9 @@
 extern crate osqp_sys;
 
 use osqp_sys as ffi;
-use std::io::Write;
-use std::{io, ptr};
+use std::error::Error;
+use std::fmt;
+use std::ptr;
 
 mod csc;
 pub use csc::CscMatrix;
@@ -97,29 +98,12 @@ fn assert_osqp_int_size() {
 macro_rules! check {
     ($fun:ident, $ret:expr) => {
         assert!(
-            $ret >= 0,
+            $ret == 0,
             "osqp_{} failed with exit code {}",
             stringify!($fun),
             $ret
         );
     };
-}
-
-/// An error that can occur when setting up the solver.
-///
-/// Currently the solver does not return information on why setup failed so the contents of this
-/// enum should be ignored.
-#[derive(Debug)]
-pub enum SetupError {
-    InvalidData,
-    InvalidSettings,
-    MemoryAllocationFailed,
-    LoadLinsysSolverFailed,
-    InitLinsysSolverFailed,
-    NonConvex,
-    // Prevent exhaustive enum matching
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 /// An instance of the OSQP solver.
@@ -160,13 +144,7 @@ impl Problem {
         u: &[float],
         settings: &Settings,
     ) -> Result<Problem, SetupError> {
-        let invalid_data = |msg| {
-            if settings.inner.verbose != 0 {
-                let stderr = io::stderr();
-                let _ = writeln!(stderr.lock(), "{}", msg);
-            }
-            Err(SetupError::InvalidData)
-        };
+        let invalid_data = |msg| Err(SetupError::DataInvalid(msg));
 
         unsafe {
             // Ensure the provided data is valid. While OSQP internally performs some validity
@@ -208,8 +186,7 @@ impl Problem {
                 return invalid_data("P must be structurally upper triangular");
             }
 
-            // csc_to_ffi ensures sparse matrices have valid structure and that indices do not
-            // exceed isize::MAX
+            // Calling `to_ffi` is safe as we have ensured that `P` and `A` are valid CSC matrices.
             let mut P_ffi = P.to_ffi();
             let mut A_ffi = A.to_ffi();
 
@@ -227,14 +204,14 @@ impl Problem {
             let mut workspace: *mut ffi::OSQPWorkspace = ptr::null_mut();
 
             let status = ffi::osqp_setup(&mut workspace, &data, settings);
-            let err = match status as ffi::ffi_osqp_setup_status {
+            let err = match status as ffi::osqp_error_type {
                 0 => return Ok(Problem { workspace, n, m }),
-                ffi::OSQP_DATA_VALIDATION_ERROR => SetupError::InvalidData,
-                ffi::OSQP_SETTINGS_VALIDATION_ERROR => SetupError::InvalidSettings,
-                ffi::OSQP_MEMORY_ALLOCATION_ERROR => SetupError::MemoryAllocationFailed,
-                ffi::OSQP_LOAD_LINSYS_SOLVER_ERROR => SetupError::LoadLinsysSolverFailed,
-                ffi::OSQP_INIT_LINSYS_SOLVER_ERROR => SetupError::InitLinsysSolverFailed,
-                ffi::OSQP_INIT_LINSYS_SOLVER_NONCVX_ERROR => SetupError::NonConvex,
+                ffi::OSQP_DATA_VALIDATION_ERROR => SetupError::DataInvalid(""),
+                ffi::OSQP_SETTINGS_VALIDATION_ERROR => SetupError::SettingsInvalid,
+                ffi::OSQP_LINSYS_SOLVER_LOAD_ERROR => SetupError::LinsysSolverLoadFailed,
+                ffi::OSQP_LINSYS_SOLVER_INIT_ERROR => SetupError::LinsysSolverInitFailed,
+                ffi::OSQP_NONCVX_ERROR => SetupError::NonConvex,
+                ffi::OSQP_MEM_ALLOC_ERROR => SetupError::MemoryAllocationFailed,
                 _ => unreachable!(),
             };
 
@@ -450,6 +427,48 @@ impl Drop for Problem {
 
 unsafe impl Send for Problem {}
 unsafe impl Sync for Problem {}
+
+/// An error that can occur when setting up the solver.
+///
+/// Currently the solver does not return information on why setup failed so the contents of this
+/// enum should be ignored.
+#[derive(Debug)]
+pub enum SetupError {
+    DataInvalid(&'static str),
+    SettingsInvalid,
+    LinsysSolverLoadFailed,
+    LinsysSolverInitFailed,
+    NonConvex,
+    MemoryAllocationFailed,
+    // Prevent exhaustive enum matching
+    #[doc(hidden)]
+    __Nonexhaustive,
+}
+
+impl fmt::Display for SetupError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SetupError::DataInvalid(msg) => {
+                "problem data invalid".fmt(f)?;
+                if !msg.is_empty() {
+                    ": ".fmt(f)?;
+                    msg.fmt(f)?;
+                }
+                Ok(())
+            }
+            SetupError::SettingsInvalid => "problem settings invalid".fmt(f),
+            SetupError::LinsysSolverLoadFailed => "linear system solver failed to load".fmt(f),
+            SetupError::LinsysSolverInitFailed => {
+                "linear system solver failed to initialise".fmt(f)
+            }
+            SetupError::NonConvex => "problem non-convex".fmt(f),
+            SetupError::MemoryAllocationFailed => "memory allocation failed".fmt(f),
+            SetupError::__Nonexhaustive => unreachable!(),
+        }
+    }
+}
+
+impl Error for SetupError {}
 
 #[cfg(test)]
 mod tests {

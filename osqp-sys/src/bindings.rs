@@ -6,22 +6,31 @@ pub const QDLDL_SOLVER: linsys_solver_type = 0;
 pub const MKL_PARDISO_SOLVER: linsys_solver_type = 1;
 #[doc = " Linear System Solvers *"]
 pub type linsys_solver_type = u32;
+pub const OSQP_DATA_VALIDATION_ERROR: osqp_error_type = 1;
+pub const OSQP_SETTINGS_VALIDATION_ERROR: osqp_error_type = 2;
+pub const OSQP_LINSYS_SOLVER_LOAD_ERROR: osqp_error_type = 3;
+pub const OSQP_LINSYS_SOLVER_INIT_ERROR: osqp_error_type = 4;
+pub const OSQP_NONCVX_ERROR: osqp_error_type = 5;
+pub const OSQP_MEM_ALLOC_ERROR: osqp_error_type = 6;
+pub const OSQP_WORKSPACE_NOT_INIT_ERROR: osqp_error_type = 7;
+#[doc = " Solver Errors  *"]
+pub type osqp_error_type = u32;
 #[doc = "  Matrix in compressed-column or triplet form"]
 #[repr(C)]
 pub struct csc {
-    #[doc = "< maximum number of entries."]
+    #[doc = "< maximum number of entries"]
     pub nzmax: c_int,
     #[doc = "< number of rows"]
     pub m: c_int,
     #[doc = "< number of columns"]
     pub n: c_int,
-    #[doc = "< column pointers (size n+1) (col indices (size nzmax)"]
+    #[doc = "< column pointers (size n+1); col indices (size nzmax) start from 0 when using triplet format (direct KKT matrix formation)"]
     pub p: *mut c_int,
     #[doc = "< row indices, size nzmax starting from 0"]
     pub i: *mut c_int,
     #[doc = "< numerical values, size nzmax"]
     pub x: *mut c_float,
-    #[doc = "< # of entries in triplet matrix, -1 for csc"]
+    #[doc = "< number of entries in triplet matrix, -1 for csc"]
     pub nz: c_int,
 }
 #[doc = " Linear system solver structure (sublevel objects initialize it differently)"]
@@ -45,7 +54,7 @@ pub struct OSQPScaling {
 #[doc = " Solution structure"]
 #[repr(C)]
 pub struct OSQPSolution {
-    #[doc = "< Primal solution"]
+    #[doc = "< primal solution"]
     pub x: *mut c_float,
     #[doc = "< Lagrange multiplier associated to \\f$l <= Ax <= u\\f$"]
     pub y: *mut c_float,
@@ -55,11 +64,11 @@ pub struct OSQPSolution {
 pub struct OSQPInfo {
     #[doc = "< number of iterations taken"]
     pub iter: c_int,
-    #[doc = "< status string, e.g. \'solved\'"]
+    #[doc = "< status string, e.g. 'solved'"]
     pub status: [::std::os::raw::c_char; 32usize],
     #[doc = "< status as c_int, defined in constants.h"]
     pub status_val: c_int,
-    #[doc = "< polish status: successful (1), unperformed (0), (-1)"]
+    #[doc = "< polish status: successful (1), unperformed (0), (-1) unsuccessful"]
     pub status_polish: c_int,
     #[doc = "< primal objective"]
     pub obj_val: c_float,
@@ -85,7 +94,7 @@ pub struct OSQPInfo {
 #[doc = " Polish structure"]
 #[repr(C)]
 pub struct OSQPPolish {
-    #[doc = "< Active rows of A."]
+    #[doc = "< active rows of A"]
     #[doc = "<    Ared = vstack[Alow, Aupp]"]
     pub Ared: *mut csc,
     #[doc = "< number of lower-active rows"]
@@ -120,7 +129,7 @@ pub struct OSQPData {
     pub n: c_int,
     #[doc = "< number of constraints m"]
     pub m: c_int,
-    #[doc = "< the upper triangular part of the quadratic cost matrix"]
+    #[doc = "< the upper triangular part of the quadratic cost matrix P in csc format (size n x n)."]
     pub P: *mut csc,
     #[doc = "< linear constraints matrix A in csc format (size m x n)"]
     pub A: *mut csc,
@@ -138,17 +147,17 @@ pub struct OSQPSettings {
     pub rho: c_float,
     #[doc = "< ADMM step sigma"]
     pub sigma: c_float,
-    #[doc = "< heuristic data scaling iterations. If 0,"]
+    #[doc = "< heuristic data scaling iterations; if 0, then disabled."]
     pub scaling: c_int,
     #[doc = "< boolean, is rho step size adaptive?"]
     pub adaptive_rho: c_int,
-    #[doc = "< Number of iterations between rho"]
+    #[doc = "< number of iterations between rho adaptations; if 0, then it is automatic"]
     pub adaptive_rho_interval: c_int,
-    #[doc = "< Tolerance X for adapting rho. The new rho"]
+    #[doc = "< tolerance X for adapting rho. The new rho has to be X times larger or 1/X times smaller than the current one to trigger a new factorization."]
     pub adaptive_rho_tolerance: c_float,
-    #[doc = "< Interval for adapting rho (fraction of"]
+    #[doc = "< interval for adapting rho (fraction of the setup time)"]
     pub adaptive_rho_fraction: c_float,
-    #[doc = "< maximum iterations"]
+    #[doc = "< maximum number of iterations"]
     pub max_iter: c_int,
     #[doc = "< absolute convergence tolerance"]
     pub eps_abs: c_float,
@@ -162,21 +171,21 @@ pub struct OSQPSettings {
     pub alpha: c_float,
     #[doc = "< linear system solver to use"]
     pub linsys_solver: linsys_solver_type,
-    #[doc = "< regularization parameter for"]
+    #[doc = "< regularization parameter for polishing"]
     pub delta: c_float,
     #[doc = "< boolean, polish ADMM solution"]
     pub polish: c_int,
-    #[doc = "< iterative refinement steps in"]
+    #[doc = "< number of iterative refinement steps in polishing"]
     pub polish_refine_iter: c_int,
     #[doc = "< boolean, write out progress"]
     pub verbose: c_int,
-    #[doc = "< boolean, use scaled termination"]
+    #[doc = "< boolean, use scaled termination criteria"]
     pub scaled_termination: c_int,
-    #[doc = "< integer, check termination"]
+    #[doc = "< integer, check termination interval; if 0, then termination checking is disabled"]
     pub check_termination: c_int,
     #[doc = "< boolean, warm start"]
     pub warm_start: c_int,
-    #[doc = "< maximum seconds allowed to solve"]
+    #[doc = "< maximum number of seconds allowed to solve the problem; if 0, then disabled"]
     pub time_limit: c_float,
 }
 #[doc = " OSQP Workspace"]
@@ -192,7 +201,7 @@ pub struct OSQPWorkspace {
     pub rho_vec: *mut c_float,
     #[doc = "< vector of inv rho values"]
     pub rho_inv_vec: *mut c_float,
-    #[doc = "< Type of constraints: loose (-1), equality (1),"]
+    #[doc = "< Type of constraints: loose (-1), equality (1), inequality (0)"]
     pub constr_type: *mut c_int,
     #[doc = "< Iterate x"]
     pub x: *mut c_float,
@@ -206,17 +215,17 @@ pub struct OSQPWorkspace {
     pub x_prev: *mut c_float,
     #[doc = "< Previous z"]
     pub z_prev: *mut c_float,
-    #[doc = "< Scaled A * x"]
+    #[doc = "< scaled A * x"]
     pub Ax: *mut c_float,
-    #[doc = "< Scaled P * x"]
+    #[doc = "< scaled P * x"]
     pub Px: *mut c_float,
-    #[doc = "< Scaled A * x"]
+    #[doc = "< scaled A * x"]
     pub Aty: *mut c_float,
-    #[doc = "< Difference of consecutive dual iterates"]
+    #[doc = "< difference between consecutive dual iterates"]
     pub delta_y: *mut c_float,
-    #[doc = "< A\' * delta_y"]
+    #[doc = "< A' * delta_y"]
     pub Atdelta_y: *mut c_float,
-    #[doc = "< Difference of consecutive primal iterates"]
+    #[doc = "< difference between consecutive primal iterates"]
     pub delta_x: *mut c_float,
     #[doc = "< P * delta_x"]
     pub Pdelta_x: *mut c_float,
@@ -224,19 +233,19 @@ pub struct OSQPWorkspace {
     pub Adelta_x: *mut c_float,
     #[doc = "< temporary primal variable scaling vectors"]
     pub D_temp: *mut c_float,
-    #[doc = "< temporary primal variable scaling vectors storing"]
+    #[doc = "< temporary primal variable scaling vectors storing norms of A columns"]
     pub D_temp_A: *mut c_float,
-    #[doc = "< temporary constraints scaling vectors storing norms of"]
+    #[doc = "< temporary constraints scaling vectors storing norms of A' columns"]
     pub E_temp: *mut c_float,
-    #[doc = "< Problem settings"]
+    #[doc = "< problem settings"]
     pub settings: *mut OSQPSettings,
-    #[doc = "< Scaling vectors"]
+    #[doc = "< scaling vectors"]
     pub scaling: *mut OSQPScaling,
-    #[doc = "< Problem solution"]
+    #[doc = "< problem solution"]
     pub solution: *mut OSQPSolution,
-    #[doc = "< Solver information"]
+    #[doc = "< solver information"]
     pub info: *mut OSQPInfo,
-    #[doc = "< Timer object"]
+    #[doc = "< timer object"]
     pub timer: *mut OSQPTimer,
     #[doc = " flag indicating whether the solve function has been run before"]
     pub first_run: c_int,
@@ -253,12 +262,12 @@ pub struct OSQPWorkspace {
 #[doc = "      on the choice"]
 #[repr(C)]
 pub struct linsys_solver {
-    #[doc = "< Linear system solver type"]
+    #[doc = "< linear system solver type functions"]
     pub type_: linsys_solver_type,
     pub solve: ::std::option::Option<
         unsafe extern "C" fn(self_: *mut LinSysSolver, b: *mut c_float) -> c_int,
     >,
-    #[doc = "< Free linear system solver"]
+    #[doc = "< free linear system solver (only in desktop version)"]
     pub free: ::std::option::Option<unsafe extern "C" fn(self_: *mut LinSysSolver)>,
     pub update_matrices: ::std::option::Option<
         unsafe extern "C" fn(s: *mut LinSysSolver, P: *const csc, A: *const csc) -> c_int,
@@ -266,7 +275,7 @@ pub struct linsys_solver {
     pub update_rho_vec: ::std::option::Option<
         unsafe extern "C" fn(s: *mut LinSysSolver, rho_vec: *const c_float) -> c_int,
     >,
-    #[doc = "< Number of threads active"]
+    #[doc = "< number of threads active"]
     pub nthreads: c_int,
 }
 extern "C" {
@@ -571,13 +580,6 @@ extern "C" {
     #[doc = " @return                 Exitflag"]
     pub fn osqp_update_time_limit(work: *mut OSQPWorkspace, time_limit_new: c_float) -> c_int;
 }
-pub const OSQP_DATA_VALIDATION_ERROR: ffi_osqp_setup_status = 1;
-pub const OSQP_SETTINGS_VALIDATION_ERROR: ffi_osqp_setup_status = 2;
-pub const OSQP_MEMORY_ALLOCATION_ERROR: ffi_osqp_setup_status = 3;
-pub const OSQP_LOAD_LINSYS_SOLVER_ERROR: ffi_osqp_setup_status = 4;
-pub const OSQP_INIT_LINSYS_SOLVER_ERROR: ffi_osqp_setup_status = 5;
-pub const OSQP_INIT_LINSYS_SOLVER_NONCVX_ERROR: ffi_osqp_setup_status = 6;
-pub type ffi_osqp_setup_status = u32;
 pub const OSQP_DUAL_INFEASIBLE_INACCURATE: ffi_osqp_solve_status = 4;
 pub const OSQP_PRIMAL_INFEASIBLE_INACCURATE: ffi_osqp_solve_status = 3;
 pub const OSQP_SOLVED_INACCURATE: ffi_osqp_solve_status = 2;

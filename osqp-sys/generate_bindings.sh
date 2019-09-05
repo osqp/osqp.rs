@@ -17,7 +17,7 @@ bindgen bindings.h -o src/bindings.rs \
 --whitelist-type OSQPWorkspace \
 --whitelist-type linsys_solver \
 --whitelist-type linsys_solver_type \
---whitelist-type ffi_osqp_setup_status \
+--whitelist-type osqp_error_type \
 --whitelist-type ffi_osqp_solve_status \
 --whitelist-function osqp_setup \
 --whitelist-function osqp_solve \
