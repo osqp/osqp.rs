@@ -45,9 +45,8 @@
 //! // Extract the upper triangular elements of `P`
 //! let P = CscMatrix::from(P).into_upper_tri();
 //!
-//! // Change the default alpha and disable verbose output
+//! // Disable verbose output
 //! let settings = Settings::default()
-//!     .alpha(1.0)
 //!     .verbose(false);
 //! # let settings = settings.adaptive_rho(false);
 //!
@@ -61,7 +60,7 @@
 //! println!("{:?}", result.x().expect("failed to solve problem"));
 //! #
 //! # // Check the solution
-//! # let expected = &[0.2987710845986426, 0.701227995544065];
+//! # let expected = &[0.30137570387082474, 0.6983956863817343];
 //! # let x = result.solution().unwrap().x();
 //! # assert_eq!(expected.len(), x.len());
 //! # assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
