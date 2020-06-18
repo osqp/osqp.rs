@@ -47,7 +47,7 @@ impl<'a> CscMatrix<'a> {
         CscMatrix::from_iter_dense_inner(nrows, ncols, |size| {
             let mut data = Vec::with_capacity(size);
             data.extend(iter.into_iter().take(size));
-            assert_eq!(size, data.len());
+            assert_eq!(size, data.len(), "not enough elements in iterator");
             data
         })
     }
@@ -69,7 +69,7 @@ impl<'a> CscMatrix<'a> {
             let mut data = vec![0.0; size];
             for r in 0..nrows {
                 for c in 0..ncols {
-                    data[c * ncols + r] = iter.next().expect("not enough elements in iterator");
+                    data[c * nrows + r] = iter.next().expect("not enough elements in iterator");
                 }
             }
             data
@@ -347,20 +347,30 @@ mod tests {
     #[test]
     fn csc_from_iter_dense() {
         let mat1 = CscMatrix::from_column_iter_dense(
+            4,
             3,
-            3,
-            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-                .iter()
-                .cloned(),
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .iter()
+            .cloned(),
         );
         let mat2 = CscMatrix::from_row_iter_dense(
+            4,
             3,
-            3,
-            [1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0]
-                .iter()
-                .cloned(),
+            [
+                1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0,
+            ]
+            .iter()
+            .cloned(),
         );
-        let mat3: CscMatrix = (&[[1.0, 4.0, 7.0], [2.0, 5.0, 8.0], [3.0, 6.0, 9.0]]).into();
+        let mat3: CscMatrix = (&[
+            [1.0, 5.0, 9.0],
+            [2.0, 6.0, 10.0],
+            [3.0, 7.0, 11.0],
+            [4.0, 8.0, 12.0],
+        ])
+            .into();
 
         assert_eq!(mat1, mat3);
         assert_eq!(mat2, mat3);
