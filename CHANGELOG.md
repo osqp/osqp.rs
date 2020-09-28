@@ -1,3 +1,7 @@
+Version 0.6.1 (September 28, 2020)
+-----------
+- Fix `CscMatrix::from_row_iter_dense` incorrectly initialising non-square matrices.
+
 Version 0.6.0 (September 5, 2019)
 -----------
 - Add `CscMatrix::from_column_iter_dense` and `CscMatrix::from_row_iter_dense` to construct a dense CscMatrix with elements filled from column-major and row-major iterators.

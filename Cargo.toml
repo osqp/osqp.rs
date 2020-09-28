@@ -1,13 +1,13 @@
 [package]
 name = "osqp"
-version = "0.6.0"
+version = "0.6.1"
 description = "The OSQP (Operator Splitting Quadratic Program) solver."
 authors = ["Edward Barnard <eabarnard@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://osqp.org/"
 repository = "https://github.com/oxfordcontrol/osqp.rs/"
-documentation = "https://docs.rs/osqp/0.6.0/"
+documentation = "https://docs.rs/osqp/0.6.1/"
 keywords = ["optimisation", "optimization", "programming", "quadratic", "linear"]
 
 [workspace]
