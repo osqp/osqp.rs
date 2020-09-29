@@ -6,7 +6,7 @@ Version 0.6.0 (September 5, 2019)
 -----------
 - Add `CscMatrix::from_column_iter_dense` and `CscMatrix::from_row_iter_dense` to construct a dense CscMatrix with elements filled from column-major and row-major iterators.
 - `Problem` now requires the `P` matrix to be structurally upper triangular. Two methods on `CscMatrix`, `is_structurally_upper_tri` and `into_upper_tri`, are added to assist with this requirement.
-- Add variants to the `SetupError` enum returned by `Problem::new` explaining the cause of the error. 
+- Add variants to the `SetupError` enum returned by `Problem::new` explaining the cause of the error.
 
 Version 0.5.0 (December 10, 2018)
 -----------
