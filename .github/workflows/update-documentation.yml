@@ -1,0 +1,38 @@
+on:
+  push:
+    branches:
+      - master
+
+name: Update Documentation
+
+jobs:
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # If you're using actions/checkout@v2 you must set persist-credentials to false in most
+          # cases for the deployment to work correctly.
+          persist-credentials: false
+
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          default: true
+          toolchain: nightly
+
+      - name: Generate Documentation
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args:  --all --no-deps
+
+      - name: Upload Documentation
+        uses: JamesIves/github-pages-deploy-action@3.6.2
+        with:
+          BRANCH: gh-pages
+          FOLDER: target/doc
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SINGLE_COMMIT: true
