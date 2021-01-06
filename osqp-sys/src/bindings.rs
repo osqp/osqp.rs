@@ -15,7 +15,9 @@ pub const OSQP_MEM_ALLOC_ERROR: osqp_error_type = 6;
 pub const OSQP_WORKSPACE_NOT_INIT_ERROR: osqp_error_type = 7;
 #[doc = " Solver Errors  *"]
 pub type osqp_error_type = u32;
-#[doc = "  Matrix in compressed-column or triplet form"]
+#[doc = "  Matrix in compressed-column form."]
+#[doc = "  The structure is used internally to store matrices in the triplet form as well,"]
+#[doc = "  but the API requires that the matrices are in the CSC format."]
 #[repr(C)]
 pub struct csc {
     #[doc = "< maximum number of entries"]
@@ -53,6 +55,7 @@ pub struct OSQPScaling {
 }
 #[doc = " Solution structure"]
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct OSQPSolution {
     #[doc = "< primal solution"]
     pub x: *mut c_float,
@@ -219,7 +222,7 @@ pub struct OSQPWorkspace {
     pub Ax: *mut c_float,
     #[doc = "< scaled P * x"]
     pub Px: *mut c_float,
-    #[doc = "< scaled A * x"]
+    #[doc = "< scaled A' * y"]
     pub Aty: *mut c_float,
     #[doc = "< difference between consecutive dual iterates"]
     pub delta_y: *mut c_float,
