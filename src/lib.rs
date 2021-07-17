@@ -428,9 +428,6 @@ unsafe impl Send for Problem {}
 unsafe impl Sync for Problem {}
 
 /// An error that can occur when setting up the solver.
-///
-/// Currently the solver does not return information on why setup failed so the contents of this
-/// enum should be ignored.
 #[derive(Debug)]
 pub enum SetupError {
     DataInvalid(&'static str),
