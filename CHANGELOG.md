@@ -1,3 +1,7 @@
+Unreleased
+-----------
+- Don't panic when updating an empty A matrix.
+
 Version 0.6.2 (January 7, 2021)
 -----------
 - Update to OSQP 0.6.2 (see [OSQP changelog][osqp-clog] for details).

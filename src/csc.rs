@@ -183,12 +183,18 @@ impl<'a> CscMatrix<'a> {
     pub(crate) unsafe fn from_ffi<'b>(csc: *const ffi::csc) -> CscMatrix<'b> {
         let nrows = (*csc).m as usize;
         let ncols = (*csc).n as usize;
-        let nnz = (*csc).nzmax as usize;
+        let indptr = Cow::Borrowed(slice::from_raw_parts((*csc).p as *const usize, ncols + 1));
+        // OSQP sets `nzmax = max(nnz, 1)`, presumably so as not to have zero length allocations.
+        let nnz = if indptr[ncols] == 0 {
+            0
+        } else {
+            (*csc).nzmax as usize
+        };
 
         CscMatrix {
             nrows,
             ncols,
-            indptr: Cow::Borrowed(slice::from_raw_parts((*csc).p as *const usize, ncols + 1)),
+            indptr,
             indices: Cow::Borrowed(slice::from_raw_parts((*csc).i as *const usize, nnz)),
             data: Cow::Borrowed(slice::from_raw_parts((*csc).x as *const float, nnz)),
         }

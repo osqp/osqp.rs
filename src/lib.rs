@@ -468,6 +468,8 @@ impl Error for SetupError {}
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use super::*;
 
     #[test]
@@ -505,5 +507,25 @@ mod tests {
         let expected = &[0.2987710845986426, 0.701227995544065];
         assert_eq!(expected.len(), x.len());
         assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn empty_A() {
+        let P = CscMatrix::from(&[[4.0, 1.0], [1.0, 2.0]]).into_upper_tri();
+        let q = &[1.0, 1.0];
+
+        let A = CscMatrix::from_column_iter_dense(0, 2, iter::empty());
+        let l = &[];
+        let u = &[];
+        let mut prob = Problem::new(&P, q, &A, l, u, &Settings::default()).unwrap();
+        prob.update_A(&A);
+
+        let A = CscMatrix::from(&[[0.0, 0.0], [0.0, 0.0]]);
+        assert_eq!(A.data.len(), 0);
+        let l = &[0.0, 0.0];
+        let u = &[1.0, 1.0];
+        let mut prob = Problem::new(&P, q, &A, l, u, &Settings::default()).unwrap();
+        prob.update_A(&A);
     }
 }
