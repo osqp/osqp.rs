@@ -85,13 +85,30 @@ impl<'a> CscMatrix<'a> {
             .checked_mul(ncols)
             .expect("overflow calculating matrix size");
 
-        let data = f(size);
+        let mut dense_data = f(size);
+
+        // Initialize CSC components
+        let mut indptr = vec![0; ncols + 1];
+        let mut indices = Vec::new();
+        let mut data = Vec::new();
+
+        // Iterate over columns
+        for c in 0..ncols {
+            for r in 0..nrows {
+                let value = dense_data[c * nrows + r];
+                if value != 0.0 {
+                    indices.push(r);
+                    data.push(value);
+                }
+            }
+            indptr[c + 1] = data.len(); // indptr[c + 1] should mark the end of the current column
+        }
 
         CscMatrix {
             nrows,
             ncols,
-            indptr: Cow::Owned((0..ncols + 1).map(|i| i * nrows).collect()),
-            indices: Cow::Owned(iter::repeat(0..nrows).take(ncols).flat_map(|i| i).collect()),
+            indptr: Cow::Owned(indptr),
+            indices: Cow::Owned(indices),
             data: Cow::Owned(data),
         }
     }
