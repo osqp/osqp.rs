@@ -1,6 +1,6 @@
 [package]
 name = "osqp-sys"
-version = "0.6.2"
+version = "0.6.3-pre"
 edition = "2015"
 rust-version = "1.63"
 description = "FFI bindings to the OSQP (Operator Splitting Quadratic Program) solver."
@@ -8,7 +8,7 @@ authors = ["Edward Barnard <eabarnard@gmail.com>"]
 license = "Apache-2.0"
 homepage = "https://osqp.org/"
 repository = "https://github.com/oxfordcontrol/osqp.rs/"
-documentation = "https://docs.rs/osqp-sys/0.6.2/"
+documentation = "https://docs.rs/osqp-sys/0.6.3-pre/"
 categories = ["external-ffi-bindings"]
 links = "osqp"
 

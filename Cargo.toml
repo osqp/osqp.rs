@@ -1,6 +1,6 @@
 [package]
 name = "osqp"
-version = "0.6.2"
+version = "0.6.3-pre"
 edition = "2015"
 rust-version = "1.63"
 description = "The OSQP (Operator Splitting Quadratic Program) solver."
@@ -9,10 +9,10 @@ license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://osqp.org/"
 repository = "https://github.com/oxfordcontrol/osqp.rs/"
-documentation = "https://docs.rs/osqp/0.6.2/"
+documentation = "https://docs.rs/osqp/0.6.3-pre/"
 keywords = ["optimisation", "optimization", "programming", "quadratic", "linear"]
 
 [workspace]
 
 [dependencies]
-osqp-sys = { version = "0.6.2", path = "osqp-sys" }
+osqp-sys = { version = "0.6.3-pre", path = "osqp-sys" }
