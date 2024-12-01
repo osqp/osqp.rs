@@ -28,14 +28,14 @@ checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
 name = "osqp"
-version = "0.6.3-pre"
+version = "0.6.3"
 dependencies = [
  "osqp-sys",
 ]
 
 [[package]]
 name = "osqp-sys"
-version = "0.6.3-pre"
+version = "0.6.3"
 dependencies = [
  "cc",
  "cmake",

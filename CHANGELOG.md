@@ -1,4 +1,4 @@
-Unreleased
+Version 0.6.3 (December 1, 2024)
 -----------
 - Don't panic when updating an empty A matrix.
 - Bump minimum supported Rust version to 1.63.
