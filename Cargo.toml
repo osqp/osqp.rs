@@ -1,6 +1,8 @@
 [package]
 name = "osqp"
 version = "0.6.2"
+edition = "2015"
+rust-version = "1.63"
 description = "The OSQP (Operator Splitting Quadratic Program) solver."
 authors = ["Edward Barnard <eabarnard@gmail.com>"]
 license = "Apache-2.0"

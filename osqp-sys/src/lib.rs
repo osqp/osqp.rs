@@ -5,9 +5,9 @@
 mod bindings;
 pub use bindings::*;
 
-#[cfg(feature = "osqp_dlong")]
+#[cfg(osqp_dlong)]
 pub type osqp_int = ::std::os::raw::c_longlong;
-#[cfg(not(feature = "osqp_dlong"))]
+#[cfg(not(osqp_dlong))]
 pub type osqp_int = ::std::os::raw::c_int;
 pub type osqp_float = f64;
 
@@ -84,7 +84,7 @@ mod tests {
         data.A = A;
         data.l = l.as_mut_ptr();
         data.u = u.as_mut_ptr();
-        let data = &data as *const OSQPData;
+        let data = &mut data as *mut OSQPData;
 
         // Define solver settings
         let mut settings: OSQPSettings = mem::zeroed();
@@ -96,13 +96,13 @@ mod tests {
 
         // Setup workspace
         let mut work: *mut OSQPWorkspace = ptr::null_mut();
-        let status = osqp_setup(&mut work, data, settings);
+        let status = osqp_setup(&mut work, data as *const _, settings);
         if status != 0 {
             panic!("osqp_setup failed");
         }
 
         // Zero data and settings on the stack to ensure osqp does not reference them
-        *(data as *mut OSQPData) = mem::zeroed();
+        *data = mem::zeroed();
         *settings = mem::zeroed();
         *P = mem::zeroed();
         *A = mem::zeroed();

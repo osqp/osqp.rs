@@ -14,9 +14,10 @@ fn main() {
     }
 
     // Try to make c_int the same size as the target pointer width (i.e. 32 or 64 bits)
+    println!("cargo:rustc-check-cfg=cfg(osqp_dlong)");
     let dlong_enabled = match &*env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() {
         "64" => {
-            println!(r#"cargo:rustc-cfg=feature="osqp_dlong""#);
+            println!("cargo:rustc-cfg=osqp_dlong");
             "ON"
         }
         "32" => "OFF",
