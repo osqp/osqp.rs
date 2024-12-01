@@ -3,6 +3,7 @@ Unreleased
 - Don't panic when updating an empty A matrix.
 - Bump minimum supported Rust version to 1.63.
 - Add `CscMatrix::from_column_iter` and `CscMatrix::from_row_iter` which constructs a sparse CscMatrix with elements filled from column-major and row-major iterators.
+- Update to OSQP 0.6.3 (see [OSQP changelog][osqp-clog] for details).
 
 Version 0.6.2 (January 7, 2021)
 -----------
@@ -38,4 +39,4 @@ Version <= 0.3.0
 ----------------
 - See [OSQP changelog][osqp-clog] for details.
 
-[osqp-clog]: https://github.com/oxfordcontrol/osqp/blob/master/CHANGELOG.md "OSQP changelog"
+[osqp-clog]: https://github.com/osqp/osqp/blob/master/CHANGELOG.md "OSQP changelog"
