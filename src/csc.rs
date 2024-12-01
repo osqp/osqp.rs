@@ -35,6 +35,61 @@ pub struct CscMatrix<'a> {
 }
 
 impl<'a> CscMatrix<'a> {
+    /// Creates a sparse CSC matrix with its elements filled with the components provided by an
+    /// iterator in column-major order.
+    ///
+    /// Panics if `iter` contains fewer than `nrows * ncols` elements.
+    pub fn from_column_iter<I: IntoIterator<Item = float>>(
+        nrows: usize,
+        ncols: usize,
+        iter: I,
+    ) -> CscMatrix<'static> {
+        let mut iter = iter.into_iter();
+
+        let mut indptr = Vec::with_capacity(ncols + 1);
+        let mut indices = Vec::new();
+        let mut data = Vec::new();
+
+        indptr.push(0);
+        for _ in 0..ncols {
+            for r in 0..nrows {
+                let value = iter.next().expect("not enough elements in iterator");
+                if value != 0.0 {
+                    indices.push(r);
+                    data.push(value);
+                }
+            }
+            indptr.push(data.len());
+        }
+
+        CscMatrix {
+            nrows,
+            ncols,
+            indptr: Cow::Owned(indptr),
+            indices: Cow::Owned(indices),
+            data: Cow::Owned(data),
+        }
+    }
+
+    /// Creates a sprase CSC matrix with its elements filled with the components provided by an
+    /// iterator in row-major order.
+    ///
+    /// The order of elements in the slice must follow the usual mathematic writing, i.e.,
+    /// row-by-row.
+    ///
+    /// Panics if `iter` contains fewer than `nrows * ncols` elements.
+    pub fn from_row_iter<I: IntoIterator<Item = float>>(
+        nrows: usize,
+        ncols: usize,
+        iter: I,
+    ) -> CscMatrix<'static> {
+        // Create transposed CSC matrix from row iterator.
+        let matrix_t = CscMatrix::from_column_iter(ncols, nrows, iter);
+
+        // Transpose back to retain original order.
+        matrix_t.transpose()
+    }
+
     /// Creates a dense CSC matrix with its elements filled with the components provided by an
     /// iterator in column-major order.
     ///
@@ -44,7 +99,7 @@ impl<'a> CscMatrix<'a> {
         ncols: usize,
         iter: I,
     ) -> CscMatrix<'static> {
-        CscMatrix::from_iter_dense_inner(nrows, ncols, |size| {
+        CscMatrix::from_column_iter_dense_inner(nrows, ncols, |size| {
             let mut data = Vec::with_capacity(size);
             data.extend(iter.into_iter().take(size));
             assert_eq!(size, data.len(), "not enough elements in iterator");
@@ -64,7 +119,7 @@ impl<'a> CscMatrix<'a> {
         ncols: usize,
         iter: I,
     ) -> CscMatrix<'static> {
-        CscMatrix::from_iter_dense_inner(nrows, ncols, |size| {
+        CscMatrix::from_column_iter_dense_inner(nrows, ncols, |size| {
             let mut iter = iter.into_iter();
             let mut data = vec![0.0; size];
             for r in 0..nrows {
@@ -76,7 +131,7 @@ impl<'a> CscMatrix<'a> {
         })
     }
 
-    fn from_iter_dense_inner<F: FnOnce(usize) -> Vec<float>>(
+    fn from_column_iter_dense_inner<F: FnOnce(usize) -> Vec<float>>(
         nrows: usize,
         ncols: usize,
         f: F,
@@ -163,6 +218,50 @@ impl<'a> CscMatrix<'a> {
             indices: Cow::Owned(indices),
             data: Cow::Owned(data),
             ..self
+        }
+    }
+
+    fn transpose(&self) -> CscMatrix<'static> {
+        let mut indptr_t = vec![0; self.nrows + 1];
+        let mut indices_t = vec![0; self.indices.len()];
+        let mut data_t = vec![0.0; self.data.len()];
+
+        // Find the number of non-zero elements in each row.
+        for i in 0..self.data.len() {
+            indptr_t[self.indices[i] + 1] += 1;
+        }
+
+        // Cumulative sum to convert to row indices array.
+        let mut sum = 0;
+        for v in indptr_t.iter_mut() {
+            sum += *v;
+            *v = sum;
+        }
+
+        // Traverse each column and place elements in the correct row.
+        // Row indices array will be offset by the number of non-zero elements in each row.
+        for c in 0..self.ncols {
+            for i in self.indptr[c]..self.indptr[c + 1] {
+                let r = self.indices[i];
+                let j = indptr_t[r];
+
+                indices_t[j] = c;
+                data_t[j] = self.data[i];
+
+                indptr_t[r] += 1;
+            }
+        }
+
+        // Un-offset the row indices array.
+        indptr_t.rotate_right(1);
+        indptr_t[0] = 0;
+
+        CscMatrix {
+            nrows: self.ncols,
+            ncols: self.nrows,
+            indptr: Cow::Owned(indptr_t),
+            indices: Cow::Owned(indices_t),
+            data: Cow::Owned(data_t),
         }
     }
 
@@ -351,26 +450,58 @@ mod tests {
     }
 
     #[test]
+    fn csc_from_iter_sparse() {
+        let from_column = CscMatrix::from_column_iter(
+            4,
+            3,
+            [1.0, 0.0, 2.0, 3.0, 0.0, 4.0, 0.0, 5.0, 6.0, 7.0, 0.0, 8.0]
+                .iter()
+                .copied(),
+        );
+
+        let from_row = CscMatrix::from_row_iter(
+            4,
+            3,
+            [1.0, 0.0, 6.0, 0.0, 4.0, 7.0, 2.0, 0.0, 0.0, 3.0, 5.0, 8.0]
+                .iter()
+                .copied(),
+        );
+
+        let expected = CscMatrix {
+            nrows: 4,
+            ncols: 3,
+            indptr: Cow::Borrowed(&[0, 3, 5, 8]),
+            indices: Cow::Borrowed(&[0, 2, 3, 1, 3, 0, 1, 3]),
+            data: Cow::Borrowed(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+        };
+
+        assert_eq!(from_column, expected);
+        assert_eq!(from_row, expected);
+    }
+
+    #[test]
     fn csc_from_iter_dense() {
-        let mat1 = CscMatrix::from_column_iter_dense(
+        let from_column = CscMatrix::from_column_iter_dense(
             4,
             3,
             [
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
             ]
             .iter()
-            .cloned(),
+            .copied(),
         );
-        let mat2 = CscMatrix::from_row_iter_dense(
+
+        let from_row = CscMatrix::from_row_iter_dense(
             4,
             3,
             [
                 1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0,
             ]
             .iter()
-            .cloned(),
+            .copied(),
         );
-        let mat3: CscMatrix = (&[
+
+        let expected: CscMatrix = (&[
             [1.0, 5.0, 9.0],
             [2.0, 6.0, 10.0],
             [3.0, 7.0, 11.0],
@@ -378,8 +509,8 @@ mod tests {
         ])
             .into();
 
-        assert_eq!(mat1, mat3);
-        assert_eq!(mat2, mat3);
+        assert_eq!(from_column, expected);
+        assert_eq!(from_row, expected);
     }
 
     #[test]
