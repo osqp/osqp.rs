@@ -1,11 +1,25 @@
 #!/bin/bash
 
 bindgen bindings.h -o src/bindings.rs \
+--rust-target 1.63 \
 --distrust-clang-mangling \
 --no-layout-tests \
 --no-recursive-allowlist \
 --no-prepend-enum-name \
---raw-line "use {c_float, c_int, OSQPTimer};" \
+--raw-line "use {OSQPFloat, OSQPInt};" \
+--allowlist-type osqp_linsys_solver_type \
+--allowlist-type osqp_precond_type \
+--allowlist-type OSQPWorkspace_ \
+--allowlist-type OSQPSolver \
+--allowlist-type OSQPCscMatrix \
+--allowlist-function OSQPCscMatrix_new \
+--allowlist-function OSQPCscMatrix_free \
+--allowlist-function OSQPSettings_new \
+--allowlist-function OSQPSettings_free \
+--allowlist-function osqp_version \
+--allowlist-type osqp_status_type \
+--allowlist-function osqp_update_data_vec \
+--allowlist-function osqp_update_data_mat \
 --allowlist-type csc \
 --allowlist-type LinSysSolver \
 --allowlist-type OSQPScaling \
@@ -22,16 +36,9 @@ bindgen bindings.h -o src/bindings.rs \
 --allowlist-function osqp_setup \
 --allowlist-function osqp_solve \
 --allowlist-function osqp_cleanup \
---allowlist-function osqp_update_lin_cost \
---allowlist-function osqp_update_bounds \
---allowlist-function osqp_update_lower_bound \
---allowlist-function osqp_update_upper_bound \
 --allowlist-function osqp_warm_start \
 --allowlist-function osqp_warm_start_x \
 --allowlist-function osqp_warm_start_y \
---allowlist-function osqp_update_P \
---allowlist-function osqp_update_A \
---allowlist-function osqp_update_P_A \
 --allowlist-function osqp_update_rho \
 --allowlist-function osqp_update_max_iter \
 --allowlist-function osqp_update_eps_abs \

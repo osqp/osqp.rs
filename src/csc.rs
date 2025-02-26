@@ -4,6 +4,7 @@ use std::iter;
 use std::slice;
 
 use float;
+use osqp_sys::OSQPCscMatrix;
 
 macro_rules! check {
     ($check:expr) => {
@@ -265,21 +266,22 @@ impl<'a> CscMatrix<'a> {
         }
     }
 
-    pub(crate) unsafe fn to_ffi(&self) -> ffi::csc {
+    // TODO: Remove *mut in return type here
+    pub(crate) unsafe fn to_ffi(&self) -> *mut OSQPCscMatrix {
         // Casting is safe as at this point no indices exceed isize::MAX and osqp_int is a signed
         // integer of the same size as usize/isize.
-        ffi::csc {
-            nzmax: self.data.len() as ffi::osqp_int,
-            m: self.nrows as ffi::osqp_int,
-            n: self.ncols as ffi::osqp_int,
-            p: self.indptr.as_ptr() as *mut usize as *mut ffi::osqp_int,
-            i: self.indices.as_ptr() as *mut usize as *mut ffi::osqp_int,
-            x: self.data.as_ptr() as *mut float,
-            nz: -1,
-        }
+        ffi::OSQPCscMatrix_new(
+            self.nrows as ffi::osqp_int,
+            self.ncols as ffi::osqp_int,
+            self.data.len() as ffi::osqp_int,
+            self.data.as_ptr() as *mut float,
+            self.indices.as_ptr() as *mut usize as *mut ffi::osqp_int,
+            self.indptr.as_ptr() as *mut usize as *mut ffi::osqp_int,
+        )
     }
 
-    pub(crate) unsafe fn from_ffi<'b>(csc: *const ffi::csc) -> CscMatrix<'b> {
+    #[allow(dead_code)]
+    pub(crate) unsafe fn from_ffi<'b>(csc: *const ffi::OSQPCscMatrix) -> CscMatrix<'b> {
         let nrows = (*csc).m as usize;
         let ncols = (*csc).n as usize;
         let indptr = Cow::Borrowed(slice::from_raw_parts((*csc).p as *const usize, ncols + 1));

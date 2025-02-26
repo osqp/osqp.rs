@@ -80,6 +80,7 @@ mod settings;
 pub use settings::{LinsysSolver, Settings};
 
 mod status;
+
 pub use status::{
     DualInfeasibilityCertificate, Failure, PolishStatus, PrimalInfeasibilityCertificate, Solution,
     Status,
@@ -107,7 +108,7 @@ macro_rules! check {
 
 /// An instance of the OSQP solver.
 pub struct Problem {
-    workspace: *mut ffi::OSQPWorkspace,
+    solver: *mut ffi::OSQPSolver,
     /// Number of variables
     n: usize,
     /// Number of constraints
@@ -186,37 +187,27 @@ impl Problem {
             }
 
             // Calling `to_ffi` is safe as we have ensured that `P` and `A` are valid CSC matrices.
-            let mut P_ffi = P.to_ffi();
-            let mut A_ffi = A.to_ffi();
-
-            let data = ffi::OSQPData {
-                n: n as ffi::osqp_int,
-                m: m as ffi::osqp_int,
-                P: &mut P_ffi,
-                A: &mut A_ffi,
-                q: q.as_ptr() as *mut float,
-                l: l.as_ptr() as *mut float,
-                u: u.as_ptr() as *mut float,
-            };
+            let P_ffi = P.to_ffi();
+            let A_ffi = A.to_ffi();
 
             let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
-            let mut workspace: *mut ffi::OSQPWorkspace = ptr::null_mut();
+            let mut solver: *mut ffi::OSQPSolver = ptr::null_mut();
 
-            let status = ffi::osqp_setup(&mut workspace, &data, settings);
+            let status = ffi::osqp_setup(&mut solver, P_ffi, q.as_ptr(), A_ffi, l.as_ptr(), u.as_ptr(), m as ffi::osqp_int, n as ffi::osqp_int, settings);
             let err = match status as ffi::osqp_error_type {
-                0 => return Ok(Problem { workspace, n, m }),
+                0 => return Ok(Problem { solver, n, m }),
                 ffi::OSQP_DATA_VALIDATION_ERROR => SetupError::DataInvalid(""),
                 ffi::OSQP_SETTINGS_VALIDATION_ERROR => SetupError::SettingsInvalid,
-                ffi::OSQP_LINSYS_SOLVER_LOAD_ERROR => SetupError::LinsysSolverLoadFailed,
+                ffi::OSQP_ALGEBRA_LOAD_ERROR => SetupError::LinsysSolverLoadFailed,
                 ffi::OSQP_LINSYS_SOLVER_INIT_ERROR => SetupError::LinsysSolverInitFailed,
                 ffi::OSQP_NONCVX_ERROR => SetupError::NonConvex,
                 ffi::OSQP_MEM_ALLOC_ERROR => SetupError::MemoryAllocationFailed,
                 _ => unreachable!(),
             };
 
-            // If the call to `osqp_setup` fails the `OSQPWorkspace` may be partially allocated
-            if !workspace.is_null() {
-                ffi::osqp_cleanup(workspace);
+            // If the call to `osqp_setup` fails the `OSQPSolver` may be partially allocated
+            if !solver.is_null() {
+                ffi::osqp_cleanup(solver);
             }
             Err(err)
         }
@@ -230,7 +221,7 @@ impl Problem {
             assert_eq!(self.n, q.len());
             check!(
                 update_lin_cost,
-                ffi::osqp_update_lin_cost(self.workspace, q.as_ptr())
+                ffi::osqp_update_data_vec(self.solver, q.as_ptr(), ptr::null(), ptr::null())
             );
         }
     }
@@ -244,7 +235,7 @@ impl Problem {
             assert_eq!(self.m, u.len());
             check!(
                 update_bounds,
-                ffi::osqp_update_bounds(self.workspace, l.as_ptr(), u.as_ptr())
+                ffi::osqp_update_data_vec(self.solver, ptr::null(), l.as_ptr(), u.as_ptr())
             );
         }
     }
@@ -257,7 +248,7 @@ impl Problem {
             assert_eq!(self.m, l.len());
             check!(
                 update_lower_bound,
-                ffi::osqp_update_lower_bound(self.workspace, l.as_ptr())
+                ffi::osqp_update_data_vec(self.solver, ptr::null(), l.as_ptr(), ptr::null())
             );
         }
     }
@@ -270,7 +261,7 @@ impl Problem {
             assert_eq!(self.m, u.len());
             check!(
                 update_upper_bound,
-                ffi::osqp_update_upper_bound(self.workspace, u.as_ptr())
+                ffi::osqp_update_data_vec(self.solver, ptr::null(), ptr::null(), u.as_ptr())
             );
         }
     }
@@ -285,7 +276,7 @@ impl Problem {
             assert_eq!(self.m, y.len());
             check!(
                 warm_start,
-                ffi::osqp_warm_start(self.workspace, x.as_ptr(), y.as_ptr())
+                ffi::osqp_warm_start(self.solver, x.as_ptr(), y.as_ptr())
             );
         }
     }
@@ -298,7 +289,7 @@ impl Problem {
             assert_eq!(self.n, x.len());
             check!(
                 warm_start_x,
-                ffi::osqp_warm_start_x(self.workspace, x.as_ptr())
+                ffi::osqp_warm_start(self.solver, x.as_ptr(), ptr::null())
             );
         }
     }
@@ -311,7 +302,7 @@ impl Problem {
             assert_eq!(self.m, y.len());
             check!(
                 warm_start_y,
-                ffi::osqp_warm_start_y(self.workspace, y.as_ptr())
+                ffi::osqp_warm_start(self.solver, ptr::null(), y.as_ptr())
             );
         }
     }
@@ -328,16 +319,20 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_P_inner(&mut self, P: CscMatrix) {
         unsafe {
-            let P_ffi = CscMatrix::from_ffi((*(*self.workspace).data).P);
-            P.assert_same_sparsity_structure(&P_ffi);
+            // TODO: can no longer get current P/q/A/l/u from the solver?
+            // let P_ffi = CscMatrix::from_ffi((*(*self.solver).work).P);
+            // P.assert_same_sparsity_structure(&P_ffi);
 
             check!(
                 update_P,
-                ffi::osqp_update_P(
-                    self.workspace,
+                ffi::osqp_update_data_mat(
+                    self.solver,
                     P.data.as_ptr(),
                     ptr::null(),
                     P.data.len() as ffi::osqp_int,
+                    ptr::null(),
+                    ptr::null(),
+                    0
                 )
             );
         }
@@ -355,50 +350,17 @@ impl Problem {
     #[allow(non_snake_case)]
     fn update_A_inner(&mut self, A: CscMatrix) {
         unsafe {
-            let A_ffi = CscMatrix::from_ffi((*(*self.workspace).data).A);
-            A.assert_same_sparsity_structure(&A_ffi);
+            // TODO: can no longer get current P/q/A/l/u from the solver?
+            // let A_ffi = CscMatrix::from_ffi((*(*self.workspace).data).A);
+            // A.assert_same_sparsity_structure(&A_ffi);
 
             check!(
                 update_A,
-                ffi::osqp_update_A(
-                    self.workspace,
-                    A.data.as_ptr(),
+                ffi::osqp_update_data_mat(
+                    self.solver,
                     ptr::null(),
-                    A.data.len() as ffi::osqp_int,
-                )
-            );
-        }
-    }
-
-    /// Updates the elements of matrices `P` and `A` without changing either's sparsity structure.
-    ///
-    /// Panics if the sparsity structure of `P` or `A` differs from the sparsity structure of the
-    /// `P` or `A` matrices provided to `Problem::new`.
-    #[allow(non_snake_case)]
-    pub fn update_P_A<'a, 'b, T: Into<CscMatrix<'a>>, U: Into<CscMatrix<'b>>>(
-        &mut self,
-        P: T,
-        A: U,
-    ) {
-        self.update_P_A_inner(P.into(), A.into());
-    }
-
-    #[allow(non_snake_case)]
-    fn update_P_A_inner(&mut self, P: CscMatrix, A: CscMatrix) {
-        unsafe {
-            let P_ffi = CscMatrix::from_ffi((*(*self.workspace).data).P);
-            P.assert_same_sparsity_structure(&P_ffi);
-
-            let A_ffi = CscMatrix::from_ffi((*(*self.workspace).data).A);
-            A.assert_same_sparsity_structure(&A_ffi);
-
-            check!(
-                update_P_A,
-                ffi::osqp_update_P_A(
-                    self.workspace,
-                    P.data.as_ptr(),
                     ptr::null(),
-                    P.data.len() as ffi::osqp_int,
+                    0,
                     A.data.as_ptr(),
                     ptr::null(),
                     A.data.len() as ffi::osqp_int,
@@ -410,7 +372,7 @@ impl Problem {
     /// Attempts to solve the quadratic program.
     pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
-            check!(solve, ffi::osqp_solve(self.workspace));
+            check!(solve, ffi::osqp_solve(self.solver));
             Status::from_problem(self)
         }
     }
@@ -419,7 +381,7 @@ impl Problem {
 impl Drop for Problem {
     fn drop(&mut self) {
         unsafe {
-            ffi::osqp_cleanup(self.workspace);
+            ffi::osqp_cleanup(self.solver);
         }
     }
 }
@@ -474,6 +436,44 @@ mod tests {
 
     #[test]
     #[allow(non_snake_case)]
+    fn update_settings() {
+        // Directly update some settings using methods on the Settings object
+
+        let settings = Settings::default().alpha(0.7).verbose(false);
+        let settings = settings.adaptive_rho(true);
+
+        assert_eq!(settings.inner.alpha, 0.7);
+        assert_eq!(settings.inner.verbose, 0);
+        assert_eq!(settings.inner.adaptive_rho, 1);
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn update_prob_settings() {
+        // Indirectly update some settings using methods on the Problem object
+
+        // Define problem data
+        let P = CscMatrix::from(&[[4.0, 1.0], [1.0, 2.0]]).into_upper_tri();
+        let q = &[1.0, 1.0];
+        let A = &[[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]];
+        let l = &[1.0, 0.0, 0.0];
+        let u = &[1.0, 0.7, 0.7];
+
+        let settings = Settings::default().verbose(false);
+        let mut prob = Problem::new(&P, q, A, l, u, &settings).unwrap();
+
+        prob.update_rho(0.7);
+        unsafe {
+            let solver_ref = prob.solver.as_ref().unwrap();
+            let settings_ref = solver_ref.settings.as_ref().unwrap();
+
+            assert!((*settings_ref).rho == 0.7, "Expected rho to be 0.7 but found {}", (*settings_ref).rho);
+
+        }
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
     fn update_matrices() {
         // Define problem data
         let P_wrong = CscMatrix::from(&[[2.0, 1.0], [1.0, 4.0]]).into_upper_tri();
@@ -488,15 +488,6 @@ mod tests {
         // Change the default alpha and disable verbose output
         let settings = Settings::default().alpha(1.0).verbose(false);
         let settings = settings.adaptive_rho(false);
-
-        // Check updating P and A together
-        let mut prob = Problem::new(&P_wrong, q, A_wrong, l, u, &settings).unwrap();
-        prob.update_P_A(&P, A);
-        let result = prob.solve();
-        let x = result.solution().unwrap().x();
-        let expected = &[0.2987710845986426, 0.701227995544065];
-        assert_eq!(expected.len(), x.len());
-        assert!(expected.iter().zip(x).all(|(&a, &b)| (a - b).abs() < 1e-9));
 
         // Check updating P and A separately
         let mut prob = Problem::new(&P_wrong, q, A_wrong, l, u, &settings).unwrap();
@@ -529,3 +520,4 @@ mod tests {
         prob.update_A(&A);
     }
 }
+

@@ -37,23 +37,23 @@ jobs:
             target: x86_64-apple-darwin
             channel: stable
 
-          - os: windows-2019
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             channel: 1.63
-          - os: windows-2019
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             channel: stable
 
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: 1.63
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: stable
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: beta
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: nightly
     steps:
