@@ -11,55 +11,42 @@ pub type osqp_int = ::std::os::raw::c_longlong;
 pub type osqp_int = ::std::os::raw::c_int;
 pub type osqp_float = f64;
 
-type c_int = osqp_int;
-type c_float = osqp_float;
+type OSQPInt = osqp_int;
+type OSQPFloat = osqp_float;
 
 pub enum OSQPTimer {}
 
 #[cfg(test)]
 mod tests {
-    use std::{mem, ptr};
-
+    use std::ptr;
     use super::*;
 
-    extern "C" {
-        fn free(ptr: *mut u8);
-        fn csc_matrix(
-            m: c_int,
-            n: c_int,
-            nzmax: c_int,
-            x: *mut c_float,
-            i: *mut c_int,
-            p: *mut c_int,
-        ) -> *mut csc;
-    }
-
-    // examples/osqp_demo.c converted into rust
+    // examples/osqp_simple_demo.c converted into rust
     #[test]
-    fn osqp_demo_rust() {
+    fn osqp_simple_demo_rust() {
         unsafe {
-            osqp_demo_rust_unsafe();
+            osqp_simple_demo_rust_unsafe();
         }
     }
 
-    unsafe fn osqp_demo_rust_unsafe() {
+    unsafe fn osqp_simple_demo_rust_unsafe() {
         // Load problem data
-        let mut P_x: [c_float; 3] = [4.0, 1.0, 2.0];
-        let P_nnz: c_int = 3;
-        let mut P_i: [c_int; 3] = [0, 0, 1];
-        let mut P_p: [c_int; 3] = [0, 1, 3];
-        let mut q: [c_float; 2] = [1.0, 1.0];
-        let mut A_x: [c_float; 4] = [1.0, 1.0, 1.0, 1.0];
-        let A_nnz: c_int = 4;
-        let mut A_i: [c_int; 4] = [0, 1, 0, 2];
-        let mut A_p: [c_int; 3] = [0, 2, 4];
-        let mut l: [c_float; 3] = [1.0, 0.0, 0.0];
-        let mut u: [c_float; 3] = [1.0, 0.7, 0.7];
-        let n: c_int = 2;
-        let m: c_int = 3;
+        let mut P_x: [OSQPFloat; 3] = [4.0, 1.0, 2.0];
+        let P_nnz: OSQPInt = 3;
+        let mut P_i: [OSQPInt; 3] = [0, 0, 1];
+        let mut P_p: [OSQPInt; 3] = [0, 1, 3];
+        let q: [OSQPFloat; 2] = [1.0, 1.0];
+        let mut A_x: [OSQPFloat; 4] = [1.0, 1.0, 1.0, 1.0];
+        let A_nnz: OSQPInt = 4;
+        let mut A_i: [OSQPInt; 4] = [0, 1, 0, 2];
+        let mut A_p: [OSQPInt; 3] = [0, 2, 4];
+        let l: [OSQPFloat; 3] = [1.0, 0.0, 0.0];
+        let u: [OSQPFloat; 3] = [1.0, 0.7, 0.7];
+        let n: OSQPInt = 2;
+        let m: OSQPInt = 3;
 
         // Populate data
-        let P = csc_matrix(
+        let P = OSQPCscMatrix_new(
             n,
             n,
             P_nnz,
@@ -67,7 +54,7 @@ mod tests {
             P_i.as_mut_ptr(),
             P_p.as_mut_ptr(),
         );
-        let A = csc_matrix(
+        let A = OSQPCscMatrix_new(
             m,
             n,
             A_nnz,
@@ -76,52 +63,34 @@ mod tests {
             A_p.as_mut_ptr(),
         );
 
-        let mut data: OSQPData = mem::zeroed();
-        data.n = n;
-        data.m = m;
-        data.P = P;
-        data.q = q.as_mut_ptr();
-        data.A = A;
-        data.l = l.as_mut_ptr();
-        data.u = u.as_mut_ptr();
-        let data = &mut data as *mut OSQPData;
-
         // Define solver settings
-        let mut settings: OSQPSettings = mem::zeroed();
-        osqp_set_default_settings(&mut settings);
-        settings.alpha = 1.0;
-        settings.adaptive_rho = 0;
-        settings.linsys_solver = QDLDL_SOLVER;
-        let settings = &mut settings as *mut OSQPSettings;
+        let settings: *mut OSQPSettings = OSQPSettings_new();
+        osqp_set_default_settings(settings);
+        (*settings).polishing = 1;
 
-        // Setup workspace
-        let mut work: *mut OSQPWorkspace = ptr::null_mut();
-        let status = osqp_setup(&mut work, data as *const _, settings);
+        // set up a solver null pointer that we can pass to osqp_setup
+        let mut solver: *mut OSQPSolver = ptr::null_mut();
+        let status = osqp_setup(&mut solver, P, q.as_ptr(), A, l.as_ptr(), u.as_ptr(), m, n, settings);
         if status != 0 {
             panic!("osqp_setup failed");
         }
 
-        // Zero data and settings on the stack to ensure osqp does not reference them
-        *data = mem::zeroed();
-        *settings = mem::zeroed();
-        *P = mem::zeroed();
-        *A = mem::zeroed();
-
         // Solve problem
-        osqp_solve(work);
+        osqp_solve(solver);
 
         // Check the results
         let eps = 1e-9;
-        let x = (*(*work).solution).x;
+        let x = (*(*solver).solution).x;
         let x0 = *x;
         let x1 = *(x.offset(1));
         println!("[{}, {}]", x0, x1);
-        assert!((0.2987710845986426 - x0).abs() < eps);
-        assert!((0.701227995544065 - x1).abs() < eps);
+        assert!((0.3 - x0).abs() < eps);
+        assert!((0.7 - x1).abs() < eps);
 
-        // Clean workspace
-        osqp_cleanup(work);
-        free(A as *mut u8);
-        free(P as *mut u8);
+        // Cleanup
+        osqp_cleanup(solver);
+        OSQPSettings_free(settings);
+        OSQPCscMatrix_free(P);
+        OSQPCscMatrix_free(A);
     }
 }

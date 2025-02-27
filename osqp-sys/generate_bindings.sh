@@ -5,7 +5,17 @@ bindgen bindings.h -o src/bindings.rs \
 --no-layout-tests \
 --no-recursive-allowlist \
 --no-prepend-enum-name \
---raw-line "use {c_float, c_int, OSQPTimer};" \
+--raw-line "use {OSQPFloat, OSQPInt};" \
+--allowlist-type osqp_linsys_solver_type \
+--allowlist-type osqp_precond_type \
+--allowlist-type OSQPWorkspace_ \
+--allowlist-type OSQPSolver \
+--allowlist-type OSQPCscMatrix \
+--allowlist-function OSQPCscMatrix_new \
+--allowlist-function OSQPCscMatrix_free \
+--allowlist-function OSQPSettings_new \
+--allowlist-function OSQPSettings_free \
+--allowlist-function osqp_version \
 --allowlist-type csc \
 --allowlist-type LinSysSolver \
 --allowlist-type OSQPScaling \

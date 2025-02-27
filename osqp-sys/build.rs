@@ -53,12 +53,12 @@ fn main() {
     fs::create_dir_all(build_dir).expect("failed to create OSQP build directory in `OUT_DIR`");
 
     Config::new(&src_dir)
-        .define("CTRLC", "OFF")
-        .define("DFLOAT", "OFF")
-        .define("DLONG", dlong_enabled)
-        .define("PRINTING", "ON")
-        .define("PROFILING", "ON")
-        .define("UNITTESTS", "OFF")
+        .define("OSQP_ENABLE_INTERRUPT", "OFF")
+        .define("OSQP_USE_FLOAT", "OFF")
+        .define("OSQP_USE_LONG", dlong_enabled)
+        .define("OSQP_ENABLE_PRINTING", "ON")
+        .define("OSQP_ENABLE_PROFILING", "ON")
+        .define("OSQP_BUILD_UNITTESTS", "OFF")
         // Ensure build outputs are always in `build_dir` whichever generator CMake uses
         .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY", &build_dir)
         .define("CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG", &build_dir)
@@ -69,5 +69,5 @@ fn main() {
         .build();
 
     println!("cargo:rustc-link-search=native={}", build_dir);
-    println!("cargo:rustc-link-lib=static=osqp");
+    println!("cargo:rustc-link-lib=static=osqpstatic");
 }
