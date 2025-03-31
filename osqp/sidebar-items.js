@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["LinsysSolver","PolishStatus","SetupError","Status"],"struct":["CscMatrix","DualInfeasibilityCertificate","Failure","PrimalInfeasibilityCertificate","Problem","Settings","Solution"]};
