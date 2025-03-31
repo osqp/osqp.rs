@@ -8,8 +8,9 @@ use {float, Problem};
 /// The linear system solver for OSQP to use.
 #[derive(Clone, Debug, PartialEq)]
 pub enum LinsysSolver {
-    Qdldl,
-    MklPardiso,
+    Unknown,
+    Direct,
+    Indirect,
     // Prevent exhaustive enum matching
     #[doc(hidden)]
     __Nonexhaustive,
@@ -43,8 +44,9 @@ macro_rules! convert_rust_type {
     ($name:ident, bool, $value:expr) => ($value as ffi::osqp_int);
     ($name:ident, linsys_solver, $value:expr) => (
         match $value {
-            LinsysSolver::Qdldl => ffi::QDLDL_SOLVER,
-            LinsysSolver::MklPardiso => ffi::MKL_PARDISO_SOLVER,
+            LinsysSolver::Unknown => ffi::OSQP_UNKNOWN_SOLVER,
+            LinsysSolver::Direct => ffi::OSQP_DIRECT_SOLVER,
+            LinsysSolver::Indirect => ffi::OSQP_INDIRECT_SOLVER,
             LinsysSolver::__Nonexhaustive => unreachable!(),
         }
     );
@@ -113,7 +115,7 @@ macro_rules! settings {
                 pub fn $update_name(&mut self, value: rust_type!($typ)) {
                     unsafe {
                         let ret = ffi::$update_ffi(
-                            self.workspace,
+                            self.solver,
                             convert_rust_type!($name, $typ, value)
                         );
                         if ret != 0 {
@@ -172,44 +174,44 @@ settings! {
 
     Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
-    max_iter: u32 [update_max_iter, osqp_update_max_iter],
+    max_iter: u32,
 
     #[doc = "Sets the absolute convergence tolerance."]
-    eps_abs: float [update_eps_abs, osqp_update_eps_abs],
+    eps_abs: float,
 
     #[doc = "Sets the relative convergence tolerance."]
-    eps_rel: float [update_eps_rel, osqp_update_eps_rel],
+    eps_rel: float,
 
     #[doc = "Sets the primal infeasibility tolerance."]
-    eps_prim_inf: float [update_eps_prim_inf, osqp_update_eps_prim_inf],
+    eps_prim_inf: float,
 
     #[doc = "Sets the dual infeasibility tolerance."]
-    eps_dual_inf: float [update_eps_dual_inf, osqp_update_eps_dual_inf],
+    eps_dual_inf: float,
 
     #[doc = "Sets the linear solver relaxation parameter."]
-    alpha: float [update_alpha, osqp_update_alpha],
+    alpha: float,
 
     #[doc = "Sets the linear system solver to use."]
     linsys_solver: linsys_solver,
 
     #[doc = "Sets the polishing regularization parameter."]
-    delta: float [update_delta, osqp_update_delta],
+    delta: float,
 
     #[doc = "Enables polishing the ADMM solution."]
-    polish: bool [update_polish, osqp_update_polish],
+    polishing: bool,
 
     #[doc = "
     Sets the number of iterative refinement steps to use when polishing.
 
     Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
-    polish_refine_iter: u32 [update_polish_refine_iter, osqp_update_polish_refine_iter],
+    polish_refine_iter: u32,
 
     #[doc = "Enables writing progress to stdout."]
-    verbose: bool [update_verbose, osqp_update_verbose],
+    verbose: bool,
 
     #[doc = "Enables scaled termination criteria."]
-    scaled_termination: bool [update_scaled_termination, osqp_update_scaled_termination],
+    scaled_termination: bool,
 
     #[doc = "
     Sets the number of ADMM iterations between termination checks.
@@ -218,13 +220,13 @@ settings! {
 
     Panics on 32-bit platforms if the value is above `i32::max_value()`.
     "]
-    check_termination: option_u32 [update_check_termination, osqp_update_check_termination],
+    check_termination: option_u32,
 
     #[doc = "Enables warm starting the primal and dual variables from the previous solution."]
-    warm_start: bool [update_warm_start, osqp_update_warm_start],
+    warm_starting: bool,
 
     #[doc = "Sets the solve time limit."]
-    time_limit: option_duration [update_time_limit, osqp_update_time_limit],
+    time_limit: option_duration,
 }
 
 fn duration_to_secs(dur: Duration) -> float {

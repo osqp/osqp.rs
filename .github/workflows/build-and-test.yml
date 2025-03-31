@@ -36,24 +36,36 @@ jobs:
           - os: macos-13
             target: x86_64-apple-darwin
             channel: stable
+          - os: macos-13
+            target: x86_64-apple-darwin
+            channel: beta
+          - os: macos-13
+            target: x86_64-apple-darwin
+            channel: nightly
 
-          - os: windows-2019
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             channel: 1.63
-          - os: windows-2019
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             channel: stable
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            channel: beta
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            channel: nightly
 
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: 1.63
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: stable
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: beta
-          - os: windows-2019
+          - os: windows-2022
             target: i686-pc-windows-msvc
             channel: nightly
     steps:

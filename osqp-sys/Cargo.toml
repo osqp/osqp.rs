@@ -1,6 +1,6 @@
 [package]
 name = "osqp-sys"
-version = "0.6.3"
+version = "1.0.0"
 edition = "2015"
 rust-version = "1.63"
 description = "FFI bindings to the OSQP (Operator Splitting Quadratic Program) solver."
