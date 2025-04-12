@@ -54,4 +54,5 @@ bindgen bindings.h -o src/bindings.rs \
 --allowlist-function osqp_update_polish_refine_iter \
 --allowlist-function osqp_update_verbose \
 --allowlist-function osqp_update_time_limit \
+--allowlist-function osqp_update_settings \
 --allowlist-function osqp_set_default_settings \

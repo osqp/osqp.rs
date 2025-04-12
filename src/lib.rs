@@ -369,6 +369,17 @@ impl Problem {
         }
     }
 
+    #[allow(non_snake_case)]
+    pub fn update_settings(&mut self, settings: &Settings) {
+        let settings = &settings.inner as *const ffi::OSQPSettings as *mut ffi::OSQPSettings;
+        unsafe {
+            check!(
+                update_settings,
+                ffi::osqp_update_settings(self.solver, settings)
+            );
+        }
+    }
+
     /// Attempts to solve the quadratic program.
     pub fn solve<'a>(&'a mut self) -> Status<'a> {
         unsafe {
@@ -470,6 +481,16 @@ mod tests {
             assert!((*settings_ref).rho == 0.7, "Expected rho to be 0.7 but found {}", (*settings_ref).rho);
 
         }
+
+        // Test `update_settings()`:
+        let settings = settings.max_iter(1_0000);
+        prob.update_settings(&settings);
+        unsafe {
+            let solver_ref = prob.solver.as_ref().unwrap();
+            let settings_ref = solver_ref.settings.as_ref().unwrap();
+
+            assert_eq!((*settings_ref).max_iter, 1_0000);
+        }
     }
 
     #[test]
@@ -520,4 +541,3 @@ mod tests {
         prob.update_A(&A);
     }
 }
-
