@@ -1,6 +1,6 @@
 [package]
 name = "osqp"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2015"
 rust-version = "1.63"
 description = "The OSQP (Operator Splitting Quadratic Program) solver."
@@ -15,4 +15,4 @@ keywords = ["optimisation", "optimization", "programming", "quadratic", "linear"
 [workspace]
 
 [dependencies]
-osqp-sys = { version = "1.0.0", path = "osqp-sys" }
+osqp-sys = { version = "1.0.1", path = "osqp-sys" }

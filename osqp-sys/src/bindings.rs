@@ -284,3 +284,10 @@ extern "C" {
     #[doc = " Update the ADMM parameter rho.\n\n Limit it between OSQP_RHO_MIN and OSQP_RHO_MAX.\n\n @param  solver  Solver\n @param  rho_new New rho value\n @return         Exitflag for errors (0 if no errors)"]
     pub fn osqp_update_rho(solver: *mut OSQPSolver, rho_new: OSQPFloat) -> OSQPInt;
 }
+extern "C" {
+    #[doc = " Update problem settings.\n\n @param  solver  Solver\n @param new_settings Settings structure to copy from"]
+    pub fn osqp_update_settings(
+        solver: *mut OSQPSolver,
+        new_settings: *const OSQPSettings,
+    ) -> OSQPInt;
+}
