@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The OSQP (Operator Splitting Quadratic Program) solver is a numerical optimization package for solving convex quadratic programs in the form"><title>osqp - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-7dda4a46.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="osqp" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0-nightly (b8c54d635 2025-04-20)" data-channel="nightly" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../osqp/index.html">osqp</a><span class="version">1.0.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>osqp</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/osqp/lib.rs.html#1-559">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<p>The OSQP (Operator Splitting Quadratic Program) solver is a numerical optimization package for
+solving convex quadratic programs in the form</p>
+<div class="math">
+\[\begin{split}\begin{array}{ll}
+  \mbox{minimize} &amp; \frac{1}{2} x^T P x + q^T x \\
+  \mbox{subject to} &amp; l \leq A x \leq u
+\end{array}\end{split}\]
+</div>
+<p>
+where \(x\) is the optimization variable and \(P \in \mathbf{S}^{n}_{+}\) a positive
+semidefinite matrix.
+</p>
+<p>Further information about the solver is available at
+<a href="https://osqp.org/">osqp.org</a>.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>Consider the following QP</p>
+<div class="math">
+\[\begin{split}\begin{array}{ll}
+  \mbox{minimize} &amp; \frac{1}{2} x^T \begin{bmatrix}4 &amp; 1\\ 1 &amp; 2 \end{bmatrix} x + \begin{bmatrix}1 \\ 1\end{bmatrix}^T x \\
+  \mbox{subject to} &amp; \begin{bmatrix}1 \\ 0 \\ 0\end{bmatrix} \leq \begin{bmatrix} 1 &amp; 1\\ 1 &amp; 0\\ 0 &amp; 1\end{bmatrix} x \leq  \begin{bmatrix}1 \\ 0.7 \\ 0.7\end{bmatrix}
+\end{array}\end{split}\]
+</div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>osqp::{CscMatrix, Problem, Settings};
+
+<span class="comment">// Define problem data
+</span><span class="kw">let </span>P = <span class="kw-2">&amp;</span>[[<span class="number">4.0</span>, <span class="number">1.0</span>],
+          [<span class="number">1.0</span>, <span class="number">2.0</span>]];
+<span class="kw">let </span>q = <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">1.0</span>];
+<span class="kw">let </span>A = <span class="kw-2">&amp;</span>[[<span class="number">1.0</span>, <span class="number">1.0</span>],
+          [<span class="number">1.0</span>, <span class="number">0.0</span>],
+          [<span class="number">0.0</span>, <span class="number">1.0</span>]];
+<span class="kw">let </span>l = <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>];
+<span class="kw">let </span>u = <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">0.7</span>, <span class="number">0.7</span>];
+
+<span class="comment">// Extract the upper triangular elements of `P`
+</span><span class="kw">let </span>P = CscMatrix::from(P).into_upper_tri();
+
+<span class="comment">// Disable verbose output
+</span><span class="kw">let </span>settings = Settings::default()
+    .verbose(<span class="bool-val">false</span>);
+
+<span class="comment">// Create an OSQP problem
+</span><span class="kw">let </span><span class="kw-2">mut </span>prob = Problem::new(P, q, A, l, u, <span class="kw-2">&amp;</span>settings).expect(<span class="string">"failed to setup problem"</span>);
+
+<span class="comment">// Solve problem
+</span><span class="kw">let </span>result = prob.solve();
+
+<span class="comment">// Print the solution
+</span><span class="macro">println!</span>(<span class="string">"{:?}"</span>, result.x().expect(<span class="string">"failed to solve problem"</span>));</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.CscMatrix.html" title="struct osqp::CscMatrix">CscMatrix</a></dt><dd>A matrix in Compressed Sparse Column format.</dd><dt><a class="struct" href="struct.DualInfeasibilityCertificate.html" title="struct osqp::DualInfeasibilityCertificate">Dual<wbr>Infeasibility<wbr>Certificate</a></dt><dd>A proof of dual infeasibility.</dd><dt><a class="struct" href="struct.Failure.html" title="struct osqp::Failure">Failure</a></dt><dd>A problem that failed to be solved.</dd><dt><a class="struct" href="struct.PrimalInfeasibilityCertificate.html" title="struct osqp::PrimalInfeasibilityCertificate">Primal<wbr>Infeasibility<wbr>Certificate</a></dt><dd>A proof of primal infeasibility.</dd><dt><a class="struct" href="struct.Problem.html" title="struct osqp::Problem">Problem</a></dt><dd>An instance of the OSQP solver.</dd><dt><a class="struct" href="struct.Settings.html" title="struct osqp::Settings">Settings</a></dt><dd>The settings used when initialising a solver.</dd><dt><a class="struct" href="struct.Solution.html" title="struct osqp::Solution">Solution</a></dt><dd>A solution to a problem.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.LinsysSolver.html" title="enum osqp::LinsysSolver">Linsys<wbr>Solver</a></dt><dd>The linear system solver for OSQP to use.</dd><dt><a class="enum" href="enum.PolishStatus.html" title="enum osqp::PolishStatus">Polish<wbr>Status</a></dt><dd>The status of the polish operation.</dd><dt><a class="enum" href="enum.SetupError.html" title="enum osqp::SetupError">Setup<wbr>Error</a></dt><dd>An error that can occur when setting up the solver.</dd><dt><a class="enum" href="enum.Status.html" title="enum osqp::Status">Status</a></dt><dd>The result of solving a problem.</dd></dl></section></div></main></body></html>
